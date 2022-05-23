@@ -1,0 +1,89 @@
+{
+    "identityPoolName": "imaginariumappa227a92b_identitypool_a227a92b",
+    "allowUnauthenticatedIdentities": true,
+    "resourceNameTruncated": "imagina227a92b",
+    "userPoolName": "imaginariumappa227a92b_userpool_a227a92b",
+    "autoVerifiedAttributes": [
+        "email"
+    ],
+    "mfaConfiguration": "OFF",
+    "mfaTypes": [
+        "SMS Text Message"
+    ],
+    "smsAuthenticationMessage": "Your authentication code is {####}",
+    "smsVerificationMessage": "Your verification code is {####}",
+    "emailVerificationSubject": "Your verification code",
+    "emailVerificationMessage": "Your verification code is {####}",
+    "defaultPasswordPolicy": false,
+    "passwordPolicyMinLength": 8,
+    "passwordPolicyCharacters": [],
+    "requiredAttributes": [
+        "email"
+    ],
+    "aliasAttributes": [],
+    "userpoolClientGenerateSecret": false,
+    "userpoolClientRefreshTokenValidity": 30,
+    "userpoolClientWriteAttributes": [
+        "family_name",
+        "middle_name",
+        "gender",
+        "given_name",
+        "name",
+        "nickname",
+        "preferred_username",
+        "picture",
+        "email"
+    ],
+    "userpoolClientReadAttributes": [
+        "email",
+        "family_name",
+        "middle_name",
+        "gender",
+        "given_name",
+        "name",
+        "nickname",
+        "preferred_username",
+        "picture"
+    ],
+    "userpoolClientLambdaRole": "imagina227a92b_userpoolclient_lambda_role",
+    "userpoolClientSetAttributes": true,
+    "sharedId": "a227a92b",
+    "resourceName": "imaginariumappa227a92b",
+    "authSelections": "identityPoolAndUserPool",
+    "authRoleArn": {
+        "Fn::GetAtt": [
+            "AuthRole",
+            "Arn"
+        ]
+    },
+    "unauthRoleArn": {
+        "Fn::GetAtt": [
+            "UnauthRole",
+            "Arn"
+        ]
+    },
+    "useDefault": "defaultSocial",
+    "usernameAttributes": [
+        "email"
+    ],
+    "userPoolGroupList": [],
+    "serviceName": "Cognito",
+    "usernameCaseSensitive": false,
+    "dependsOn": [],
+    "hostedUI": true,
+    "userPoolGroups": false,
+    "adminQueries": false,
+    "triggers": "{}",
+    "parentStack": {
+        "Ref": "AWS::StackId"
+    },
+    "breakCircularDependency": true,
+    "permissions": [],
+    "hostedUIDomainName": "imaginariumappe80a3db1-e80a3db1",
+    "authProvidersUserPool": [
+        "Google"
+    ],
+    "hostedUIProviderMeta": "[{\"ProviderName\":\"Google\",\"authorize_scopes\":\"openid email profile\",\"AttributeMapping\":{\"email\":\"email\",\"username\":\"sub\"}}]",
+    "authProviders": [],
+    "oAuthMetadata": "{\"AllowedOAuthFlows\":[\"code\"],\"AllowedOAuthScopes\":[\"phone\",\"email\",\"openid\",\"profile\",\"aws.cognito.signin.user.admin\"],\"CallbackURLs\":[\"exp://127.0.0.1:19000/\"],\"LogoutURLs\":[\"exp://127.0.0.1:19000/\"]}"
+}

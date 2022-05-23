@@ -1,0 +1,20 @@
+{
+  "dev": {
+    "awscloudformation": {
+      "AuthRoleName": "amplify-imaginariumapp-dev-95115-authRole",
+      "UnauthRoleArn": "arn:aws:iam::403387258804:role/amplify-imaginariumapp-dev-95115-unauthRole",
+      "AuthRoleArn": "arn:aws:iam::403387258804:role/amplify-imaginariumapp-dev-95115-authRole",
+      "Region": "us-east-2",
+      "DeploymentBucketName": "amplify-imaginariumapp-dev-95115-deployment",
+      "UnauthRoleName": "amplify-imaginariumapp-dev-95115-unauthRole",
+      "StackName": "amplify-imaginariumapp-dev-95115",
+      "StackId": "arn:aws:cloudformation:us-east-2:403387258804:stack/amplify-imaginariumapp-dev-95115/d4b406b0-4352-11ec-973b-0aea3ecf8b06",
+      "AmplifyAppId": "d27gduqxb6k65d"
+    },
+    "categories": {
+      "auth": {
+        "imaginariumappa227a92b": {}
+      }
+    }
+  }
+}

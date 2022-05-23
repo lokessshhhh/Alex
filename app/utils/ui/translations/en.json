@@ -1,0 +1,58 @@
+{
+	"UI_HELLO": "HELLO_EN",
+	//Common
+	"UI_EMAIL_I": "E-mail",
+	"UI_USERNAME_I": "Username",
+	"UI_PASSWORD_I": "Password",
+	"UI_CONFIRM_PASSWORD_I": "Confirm Password",
+	"UI_LOGIN_B": "Log In",
+	"UI_LOGIN_OPTIONS_B": "Log In Options",
+	"UI_SENT_CONFIRM_CODE_L":"We sent an confirmation code to your email",
+	"UI_ENTER_CONFIRM_CODE_I":"Enter confirm code please",
+	"UI_CONFIRM_B" : "Confirm",
+	"UI_SEARCH_I" : "Search...",
+  
+	// Sign In page
+	"UI_SIGN_INTO_YOUR_ACCOUNT_L":"Sign into your Account",
+	"UI_FORGOT_PASSWORD_B": "Forgot Password?",
+	"UI_DON_HAVE_ACCOUNT_L": "Don't have an account?",
+	"UI_REGISTER_B": "Register Now",
+
+	//Forgot Password Page
+	"UI_RESET_YOUR_PASSWORD_L":"Reset your Password",
+	"UI_RESET_PASSWORD_B":"Reset Password",
+	"UI_ALREADY_HAVE_ACCOUNT_L":"Already have an account?",
+		
+	//Sign In Other Option page
+	"UI_LOGIN_ANOTHER_METHODS_L": "Another Log In Methods",
+	"UI_LOGIN_BY_EMAIL_B": "Log In by E-mail and Password",
+
+	//Profile Page
+	"UI_PROFILE_L": "Profile",
+	"UI_LANGUAGE_L": "Language",
+	"UI_NOTIFICATION_L": "Notifications",
+	"UI_PRIVACY_POLICY_L": "Privacy Policy",
+	"UI_SEE_FAQ_L": "See FAQ",
+	"UI_FEEDBACK_L": "Feedback",
+
+	//Langauge Page
+	"UI_ENGLISH_B": "English",
+	"UI_SPANISH_B": "Spanish",
+	"UI_RUSSIAN_B": "Russian",
+	"UI_FRENCH_B": "French",
+	"UI_GERMAN_B": "German",
+
+	//Privacy Page
+	"PRIVACY_POLICY_CONTENT":"An aspiring author during the civil rights movement of the 1960s decides to write a book detailing the African-American maid’s point of view on the white families for which they work, and the hardships they go through on a daily basis. An aspiring author during the civil rights movement of the 1960s decides to write a book detailing the African-American maid’s point of view on the white families for which they work, and the hardships they go through on a daily basis. An aspiring author during the civil rights movement of the 1960s decides to write a book detailing the African-American maid’s point of view on the white families for which they work, and the hardships they go through on a daily basis. An aspiring author during the civil rights movement of the 1960s decides to write a book detailing the African-American maid’s point of view on the white families for which they work, and the hardships they go through on a daily basis. An aspiring author during the civil rights movement of the 1960s decides to write a book detailing the African-American maid’s point of view on the white families for which they work, and the hardships they go through on a daily basis. An aspiring author during the civil rights movement of the 1960s decides to write a book detailing the African-American maid’s point of view on the white families for which they work, and the hardships they go through on a daily basis. An aspiring author during the civil rights movement of the 1960s decides to write a book detailing the African-American maid’s point of view on the white families for which they work, and the hardships they go through on a daily basis. An aspiring author during the civil rights movement of the 1960s decides to write a book detailing the African-American maid’s point of view on the white families for which they work, and the hardships they go through on a daily basis. ",
+
+	//Feedback page
+	"FEEDBACK_TYPE_L": "Type",
+	"FEEDBACK_TICKET_TYPE_L": "Ticket Type",
+	"FEEDBACK_TYPE_FEEDBACK_B": "Feedback",
+	"FEEDBACK_TYPE_FEATURE_REQUEST_B": "Feature Request",
+	"FEEDBACK_TYPE_ISSUE_B": "Issue",
+	"FEEDBACK_WRITE_QUESTION_I": "Write your question",
+	"FEEDBACK_DESCRIBE_QUESTION_I": "Describe your question",
+	"FEEDBACK_SEND_MESSAGE_B": "Send a message",
+
+}
