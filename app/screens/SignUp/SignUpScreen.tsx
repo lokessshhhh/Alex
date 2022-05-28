@@ -68,7 +68,7 @@ const SignUpScreen: NavStatelessComponent = () => {
     if (checkValidation() == true) {
       setLoading(true);
       console.log(BaseURl)
-      axios.post(BaseURl + 'register',
+      axios.post(BaseURl + 'auth/register',
         {
           email: email,
           userName: username,
@@ -106,7 +106,7 @@ const SignUpScreen: NavStatelessComponent = () => {
     }
 
     axios
-      .post(BaseURl + "verifyotp", verifyData)
+      .post(BaseURl + "auth/verifyotp", verifyData)
       .then((response) => {
         console.log("loginResponse------->", response);
         setModalConfirmCode(false)

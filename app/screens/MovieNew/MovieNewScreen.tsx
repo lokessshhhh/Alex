@@ -1,4 +1,4 @@
-import React, { useRef } from "react";
+import React, { useRef, useEffect } from "react";
 import {
   ScrollView,
   View,
@@ -58,8 +58,8 @@ const MovieNewScreen: NavStatelessComponent = () => {
   const [loglineData, setLoglineData] = React.useState<any>();
   const [genreData, setGenreData] = React.useState<any>();
   const [genre, setGenre] = React.useState('');
-  const [genreArray, setGenreArray] = React.useState([]);
-  const [movieData, setMovieData] = React.useState([]);
+  const [genreArray, setGenreArray] = React.useState<any>();
+  const [movieData, setMovieData] = React.useState<any>();
   //ImagePicker
   const [image, setImage] = React.useState<any>();
   //logline
@@ -71,6 +71,8 @@ const MovieNewScreen: NavStatelessComponent = () => {
   const [actorName, setActorName] = React.useState("");
   const [heroName, setHeroName] = React.useState("");
   const [actorDescription, setActorDescription] = React.useState("");
+  const [actorData, setActorData] = React.useState<any>();
+  const [actorDataList, setActorDataList] = React.useState<any>();
   //tag
   const [tags, setTags] = React.useState([]);
   const [tagString, setTagString] = React.useState("");
@@ -83,6 +85,12 @@ const MovieNewScreen: NavStatelessComponent = () => {
   const [synopsis, setSynopsis] = React.useState("");
   //search states
   const [similarSearch, setSimilarSearch] = React.useState("");
+  const [movieBanner, setMovieBanner] = React.useState("");
+  const [type, settype] = React.useState("");
+
+  useEffect(() => {
+    movieDetails()
+  },[])
 
   const filterSimilars = (list) => {
     return list.filter((listItem) =>
@@ -176,182 +184,222 @@ const MovieNewScreen: NavStatelessComponent = () => {
   ];
 
   //save movie
-  const saveSimilarMovie = (name:any, poster:any ) => {
-    let data = []
-    data.push({"moviePoster": poster, "movieName": name})
+  const saveSimilarMovie = (name: any, poster: any) => {
+    let movie = []
+    movie.push({ "moviePoster": "http://localhost:8000/Profile-Images/1653633652820.jpg", "movieName": name })
+    let data = { "similarMovies": movie }
+    // data.push({ "moviePoster": poster, "movieName": name })
     console.log(data)
     setMovieData(data)
+    setModalSimilarMovies(false)
   }
   //savelogline
   const saveLogline = () => {
-    const logline = []
-    logline.push({ incitingIncident: incident, protagonist: protagonist, Action: action, antagonist: antagonist })
+    const logline = { logline: { incitingIncident: incident, protagonist: protagonist, Action: action, antagonist: antagonist } }
+    // logline.push({ incitingIncident: incident, protagonist: protagonist, Action: action, antagonist: antagonist })
     setModalLogline(false)
     console.log("-------Logline-------", logline)
     setLoglineData(logline)
   }
 
-  // Movie details
-  const saveMovieDetails = () => {
-    const uriPart = image.split('.');
-    const fileExtension = uriPart[uriPart.length - 1];
-    let data = new FormData()
-    data.append('type', title)
-    data.append('movieBanner', {
-      uri: image,
-      name: `photo.${fileExtension}`,
-      type: `image/${fileExtension}`
-    });
-    data.append('title', title)
-    data.append('synopsis', synopsis)
-    data.append('logline', loglineData)
-    data.append('genres', genreData)
-    data.append('tagline', tagline)
-    data.append('tags', tagArray)
-    data.append('actor', movieData)
-    data.append('similarMovies', movieData)
-    axios
-    .post("http://localhost:8000/api/movies/basicDetails", )
-    .then((response) => {
-      console.log(response)
-    })
-    .catch((err) => {
-      console.log(err)
-    })
+  //save paticular actor
+  const saveActor = () => {
+    setModalCast(false)
+    let data = { "actors": actorData }
+    console.log(data)
+    setActorDataList(data)
   }
-  //Actor details
-  const saveNewActor = async () => {
-    const token = await AsyncStorage.getItem('authToken')
-    let actorData = new FormData();
-    const uriPart = image.split('.');
-    const fileExtension = uriPart[uriPart.length - 1];
 
-    actorData.append('actorName', actorName);
-    actorData.append('heroName', heroName);
-    actorData.append('actorDescription', actorDescription);
-    actorData.append('actorImage', {
+  // save movie, book and series details
+  const saveMovieDetails = async () => {
+    const token = await AsyncStorage.getItem('authToken')
+    const uriPart = movieBanner.split('.');
+    const fileExtension = uriPart[uriPart.length - 1];
+    let formData = new FormData()
+    formData.append('type', type)
+    formData.append(type === "Movie"
+      ? "movieBanner" : type === "Book"
+        ? "bookBanner" : type === "Serial"
+          ? "seriesBanner" : "", {
       uri: image,
       name: `photo.${fileExtension}`,
       type: `image/${fileExtension}`
     });
+    formData.append('title', title)
+    formData.append('synopsis', synopsis)
+    formData.append('logline', JSON.stringify(loglineData))
+    formData.append('genres', JSON.stringify(genreData))
+    formData.append('tagline', tagline)
+    formData.append('tags', JSON.stringify(tagArray))
+    formData.append('actors', JSON.stringify(actorDataList))
+    formData.append(type === "Movie"
+      ? "similarMovies" : type === "Book"
+        ? "similarBooks" : type === "Serial"
+          ? "similarSeries" : ""
+      , JSON.stringify(movieData))
 
-    console.log("ActooorData-----", actorData, token);
+    console.log("formData", formData);
 
-    axios
-      .post("http://localhost:8000/api/movies/actorDetails", actorData, {
+    alert(type)
+    if (type === "Movie") {
+      fetch(BaseURl + 'movies/basicDetails', {
+        method: 'post',
         headers: {
-          "x-access-token": `Bearer ${token}`,
-          // "Authorization": `Bearer ${token}`,
-          // "Accept": "multipart/form-data",
-          // "Content-Type": "multipart/form-data",
-        }
+          "Authorization": `Bearer ${token}`,
+        },
+        body: formData
       })
-      .then((response) => {
-        console.log(response)
+        .then((response) => response.json())
+        .then((responseJson) => {
+          console.log("responseJson  ", responseJson)
+          alert(responseJson.message)
+          navigation.goBack()
+        })
+        .catch((error) => {
+          console.log(error)
+        })
+    }
+    else if (type === "Book") {
+      fetch(BaseURl + 'books/basicDetails', {
+        method: 'post',
+        headers: {
+          "Authorization": `Bearer ${token}`,
+        },
+        body: formData
+      })
+        .then((response) => response.json())
+        .then((responseJson) => {
+          console.log("responseJson  ", responseJson)
+          alert(responseJson.message)
+          navigation.goBack()
+        })
+        .catch((error) => {
+          console.log(error)
+        })
+    }
+    else if (type === "Serial") {
+      fetch(BaseURl + 'series/basicDetails', {
+        method: 'post',
+        headers: {
+          "Authorization": `Bearer ${token}`,
+        },
+        body: formData
+      })
+        .then((response) => response.json())
+        .then((responseJson) => {
+          console.log("responseJson  ", responseJson)
+          if (responseJson.code === 200) {
+            alert(responseJson.message)
+            navigation.goBack()
+          }
+        })
+        .catch((error) => {
+          console.log(error)
+        })
+    }
+  }
+
+  //get movie, book and series details
+  const movieDetails = async () => {
+    const token = await AsyncStorage.getItem('authToken')
+
+    fetch(BaseURl + 'movies/movieDetails', {
+      method: 'get',
+      headers: {
+        "Authorization": `Bearer ${token}`,
+      }
+    })
+    .then((response) => response.json())
+      .then((responseJson) => {
+        console.log(responseJson)
+        if (responseJson.code === 200) {
+          setActorData(responseJson.data.actors)
+        }
       })
       .catch((error) => {
         console.log(error)
       })
   }
-  //NewActorApi
-  const newActorApi = async () => {
-
+  //Actor details
+  const saveNewActor = async () => {
     const token = await AsyncStorage.getItem('authToken')
+    var formData = new FormData();
+    let filename = image.split('/').pop();
 
-    console.log("Tokenn", token)
-    const uriPart = image.split('.');
-    const fileExtension = uriPart[uriPart.length - 1];
-
-    var actorData = new FormData();
-    
-    actorData.append('actorName', actorName);
-    actorData.append('heroName', heroName);
-    actorData.append('actorDescription', actorDescription);
-    actorData.append('actorImage', {
+    formData.append('actorName', actorName);
+    formData.append('heroName', heroName);
+    formData.append('actorDescription', actorDescription);
+    formData.append('actorImage', {
       uri: image,
-      name: `photo.${fileExtension}`,
-      type: `image/${fileExtension}`
+      name: filename,
+      type: "image/jpeg"
     });
 
-    console.log("ActooorData-----", actorData);
-    axios.post("http://localhost:8000/api/movies/actorDetails",actorData, {
+    fetch(BaseURl + 'movies/actorDetails', {
+      method: 'post',
       headers: {
-        // "x-access-token": `Bearer ${token}`
-        'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjYyNzg5MWE4YjI1NWJiMzJiMTQ0MzFjYyIsImVtYWlsIjoidGVzdDEwMDEuZGRzQGdtYWlsLmNvbSIsImlhdCI6MTY1MzI3NTI2NiwiZXhwIjozMzExNzM0NTMyfQ.FyIvihh84L1-VKuo0tDW7q3_d0_ACC9kSTdBr6N4iKQ'
-      }
-    }).then((response) => {
-      console.log("responseeSucess", response)
-      alert("sucesss")
-    }).catch((err) => {
-      console.log("Errorr", err)
-      alert("ErrorrLog")
+        "Authorization": `Bearer ${token}`,
+      },
+      body: formData
     })
-    // } catch (err) {
-    //   console.log("error1 : ", err);
+      .then((response) => response.json())
+      .then((responseJson) => {
+        console.log(responseJson)
+        if (responseJson.code === 200) {
+          let data = []
+          alert(responseJson.message)
+          data.push(responseJson.data)
+          setActorData(data)
+          setActorName("")
+          setActorDescription("")
+          setHeroName("")
+          setModalNewActor(false)
+        } else {
+          alert(responseJson.message)
+        }
+      })
+      .catch((error) => {
+        console.log(error)
+      })
+  }
 
-    // }
-    // try {
-
-    //   axios({
-    //     url: 'http://44.202.199.4:8000/api/movies/actorDetails',
-    //     method: 'POST',
-    //     headers: {
-    //       Authorization: "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjYyNzBiMDI2ZGNiMDRkNTRlYTY1YzQ3NyIsImVtYWlsIjoidGVzdDEwMDEuZGRzQGdtYWlsLmNvbSIsImlhdCI6MTY1MTU1MzgzMiwiZXhwIjozMzA4MjkxNjY0fQ.VpjeuzeFfrSCx9gje4FiS9_eQ0hJ_6C8pcz43p2ceGA"
-    //     },
-    //     data: actorData
-    //   })
-    //     .then(resp => {
-    //       console.log("Toooossss", resp)
-    //       alert("jbfgrjhbf")
-
-    //     }
-    //     )
-    //     .catch(error => {
-    //       alert("failedd")
-    //       console.log("Tooooqwqwdwdw", error)
-    //     });
-
-    // } catch (error) {
-    //   console.log("--------", error);
-    // }
-
-    // try {
-
-    //   axios.post("http://44.202.199.4:8000/api/movies/actorDetails",
-    //     actorData, {
-    //     headers: {
-    //       Authorization: `Bearer ${token}`
-    //     },
-    //   })
-    //     .then((response) => {
-    //       console.log("actordataThenResponse :", response)
-    //       alert('sucess API')
-    //     })
-    //     .catch((error) => {
-    //       console.log("errorActorData :", error)
-    //       alert(error)
-
-    //     })
-
-    // } catch (error) {
-
-    //   console.log("=====", error)
-
-    // }
-
-
+  //delete actor
+  const deleteActor = async (title: any, id: any) => {
+    const token = await AsyncStorage.getItem('authToken')
+    const data = {
+      title: title,
+      actorId: id
+    }
+    fetch(BaseURl + 'movies/deleteActor', {
+      method: 'post',
+      headers: {
+        "Authorization": `Bearer ${token}`,
+      },
+      body: JSON.stringify(data)
+    })
+      .then((response) => response.json())
+      .then((responseJson) => {
+        console.log(responseJson)
+        setModalDelActor(true)
+      })
+      .catch((error) => {
+        console.log(error)
+      })
   }
 
   //save genre
   const saveGenreData = () => {
     let data = []
     data.push("Alien Invasion")
-    setGenreArray(data)
+    let genData = { comedy: data }
+    console.log(genre);
+
+    setGenreArray(genData)
   }
 
   const saveGenreObject = () => {
-    let data = []
-    data.push({ genre: genreArray })
+    let data = { genres: genreArray }
+    // data.push({ genre: genreArray })
     console.log(data)
     setGenreData(data)
     setModalGenre(false)
@@ -360,11 +408,12 @@ const MovieNewScreen: NavStatelessComponent = () => {
   //savetag
   const saveTags = () => {
     setModalTags(false)
-    let data = []
+    let data = { "tags": tags }
     tags.push(tagString)
-    data.push({"tags": tags})
-    console.log("-------Tags-------",  data)
+    // data.push({ "tags": tags })
+    console.log("-------Tags-------", data)
     setTagArray(data)
+    setTagString('')
   }
 
 
@@ -423,6 +472,17 @@ const MovieNewScreen: NavStatelessComponent = () => {
     // }
   };
 
+  const pickMovieBanner = async () => {
+    let result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.All,
+      allowsEditing: true,
+      aspect: [4, 3],
+      quality: 1,
+    });
+    console.log(result);
+    setMovieBanner(result.uri);
+  }
+
 
   return (
     <ScrollView style={{ backgroundColor: Colors.GradTop }}>
@@ -453,7 +513,7 @@ const MovieNewScreen: NavStatelessComponent = () => {
                 <Animated.Text
                   style={[styles.headerText, { fontSize: fontsize, color: Colors.blue }]}
                 >
-                  {"Movie "}
+                  {type ? type : "Movie "}
                 </Animated.Text>
                 <FontAwesome
                   name="caret-down"
@@ -473,11 +533,11 @@ const MovieNewScreen: NavStatelessComponent = () => {
           })}
         >
           <View style={styles.movieTitle}>
-            <View style={styles.thumb}>
-              <TouchableOpacity style={{ alignSelf: "center", paddingVertical: 26 }}>
-                <Icon name="Thumb" width="24" height="24" fill="none" />
-              </TouchableOpacity>
-            </View>
+            <TouchableOpacity style={styles.thumb} onPress={() => pickMovieBanner()}>
+              {movieBanner
+                ? <Image source={{ uri: movieBanner }} style={{ flex: 1, borderRadius: 16, }} />
+                : <View style={{ alignItems: 'center', justifyContent: 'center', flex: 1 }}><Icon name="Thumb" width="24" height="24" fill="none" /></View>}
+            </TouchableOpacity>
             <View style={{ flex: 1 }}>
               <Text.ParagraphTitle style={{ marginBottom: 8 }}>{"Title"}</Text.ParagraphTitle>
               <Input placeholder={"Enter text"}
@@ -527,6 +587,7 @@ const MovieNewScreen: NavStatelessComponent = () => {
                   padding: 16,
                   borderRadius: 8,
                   textAlignVertical: "top",
+                  color: '#fff'
                 }}
                 numberOfLines={3}
                 multiline={true}
@@ -652,7 +713,7 @@ const MovieNewScreen: NavStatelessComponent = () => {
         </Snackbar>
         <View style={{ marginBottom: 16 }}>
           <Button.White
-            onPress={() => saveProject()}
+            onPress={() => saveMovieDetails()}
             textType={"Primary"}
             style={{
               alignItems: "center",
@@ -689,17 +750,26 @@ const MovieNewScreen: NavStatelessComponent = () => {
             }}
           ></View>
           <Text.ModalTitle style={{ marginBottom: 25 }}>{"Project Type"}</Text.ModalTitle>
-          <TouchableOpacity style={styles.catBtnContainer} onPress={() => setModalCategory(false)}>
+          <TouchableOpacity style={styles.catBtnContainer} onPress={() => {
+            settype("Movie")
+            setModalCategory(false)
+          }}>
             <View style={styles.catBtnText}>
               <Text.Primary>{"Movie"}</Text.Primary>
             </View>
           </TouchableOpacity>
-          <TouchableOpacity style={styles.catBtnContainer} onPress={() => setModalCategory(false)}>
+          <TouchableOpacity style={styles.catBtnContainer} onPress={() => {
+            settype("Serial")
+            setModalCategory(false)
+          }}>
             <View style={styles.catBtnText}>
               <Text.Primary>{"Series"}</Text.Primary>
             </View>
           </TouchableOpacity>
-          <TouchableOpacity style={styles.catBtnContainer} onPress={() => setModalCategory(false)}>
+          <TouchableOpacity style={styles.catBtnContainer} onPress={() => {
+            settype("Book")
+            setModalCategory(false)
+          }}>
             <View style={styles.catBtnText}>
               <Text.Primary>{"Book"}</Text.Primary>
             </View>
@@ -995,7 +1065,7 @@ const MovieNewScreen: NavStatelessComponent = () => {
           {/* <ScrollView> */}
 
           <FlatList
-            data={DATA}
+            data={actorData}
             renderItem={
               ({ item }) => {
                 return (
@@ -1008,11 +1078,9 @@ const MovieNewScreen: NavStatelessComponent = () => {
                         />
                         <View style={{ display: "flex", flexDirection: "column" }}>
                           <Text.ParagraphTitle style={{ marginBottom: 8, fontWeight: "700" }}>
-                            {/* {"Keano Reeves"} */}
-                            {item.name}
-
+                            {item.actorName}
                           </Text.ParagraphTitle>
-                          <Text.Tertiary>{"Hero: John Wick"}</Text.Tertiary>
+                          <Text.Tertiary>{item.heroName}</Text.Tertiary>
                         </View>
                       </TouchableOpacity>
                       <View style={{ display: "flex", flexDirection: "row" }}>
@@ -1022,7 +1090,7 @@ const MovieNewScreen: NavStatelessComponent = () => {
                           </View>
                         </TouchableOpacity>
 
-                        <TouchableOpacity onPress={() => setModalDelActor(true)}>
+                        <TouchableOpacity onPress={() => deleteActor(item.actorName, item._id)}>
                           <View style={[styles.editCastBtn, { backgroundColor: "rgba(255, 69, 58, 1)" }]}>
                             <Feather name="trash-2" size={24} color={Colors.white} />
                           </View>
@@ -1094,9 +1162,9 @@ const MovieNewScreen: NavStatelessComponent = () => {
           {/* </ScrollView> */}
 
           <Button.Primary
-            onPress={() => setModalCast(false)}
+            onPress={() => saveActor()}
             textType={"Primary"}
-            style={{ alignItems: "center", position: 'absolute' }}
+            style={{ alignItems: "center", position: 'absolute', bottom: 0 }}
           >
             <Text.TagTitle>{"Attach Selected"}</Text.TagTitle>
           </Button.Primary>
@@ -1148,14 +1216,12 @@ const MovieNewScreen: NavStatelessComponent = () => {
                     height: 44,
                     borderRadius: 22,
                     backgroundColor: Colors.btnBack,
-                    padding: 10,
                   }}
                   onPress={() => pickImage()} >
-                  <Icon name="User" width={96} height={96} fill={"none"} />
-                  {image && <Image source={{ uri: image }} style={{ width: 0, height: 0 }} />}
-
+                  {image
+                    ? <Image source={{ uri: image }} style={{ flex: 1, borderRadius: 22, }} resizeMode='cover' />
+                    : <View style={{ padding: 10 }}><Icon name="User" width={96} height={96} fill={"none"} /></View>}
                 </TouchableOpacity>
-
               </View>
 
               <View style={[styles.catBtnContainer, { display: "flex", flexDirection: "row" }]}>
@@ -1180,6 +1246,7 @@ const MovieNewScreen: NavStatelessComponent = () => {
                     borderRadius: 8,
                     textAlignVertical: "top",
                     width: "100%",
+                    color: '#fff'
                   }}
                   numberOfLines={3}
                   multiline={true}
@@ -1190,11 +1257,6 @@ const MovieNewScreen: NavStatelessComponent = () => {
             <Button.Primary
               onPress={() => {
                 saveNewActor()
-                // newActorApi()
-                // setActorName("")
-                // setActorDescription("")
-                // setHeroName("")
-                setModalNewActor(false)
               }
               }
               textType={"Primary"}
@@ -1348,7 +1410,7 @@ const MovieNewScreen: NavStatelessComponent = () => {
             <TouchableOpacity onPress={() => {
               saveSimilarMovie(movie.movieTitle, imagePath[movie.movieThumb])
               console.log(movie, imagePath[movie.movieThumb])
-              }}>
+            }}>
               <View key={index} style={styles.similarMovie}>
                 <Image
                   source={imagePath[movie.movieThumb]}

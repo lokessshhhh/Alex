@@ -101,38 +101,33 @@ const SignInScreen: NavStatelessComponent = () => {
 
   const signInClick = async () => {
     navigator.openMainPage()
-
-
-    // if (checkValidation() == true) {
     setLoading(true);
-
     const loginData = {
       email: email,
       password: password
     }
-
     axios
-      .post(BaseURl + "login", loginData)
+      .post(BaseURl + "auth/login", loginData)
       .then((response) => {
         setLoading(false);
-        console.log("loginToken", response.data.user.loginToken);
-
-
-        const storeToken = async () => {
-          await AsyncStorage.setItem('authToken', response.data.user.loginToken);
+        console.log("loginToken", response.data);
+        if (response.status === 200) {
+          const storeToken = async () => {
+            await AsyncStorage.setItem('authToken', response.data.user.loginToken);
+          }
+          storeToken()
+          alert(response.data.message)
+          navigator.openMainPage()
         }
-        storeToken()
-        alert("successs")
-        navigator.openMainPage()
+        else {
+          alert("User Not Found!")
+        }
       })
       .catch((err) => {
+        alert("User Not Found!")
         setLoading(false);
-
-       console.log("error please try again", err)
-
+        console.log("error please try again", err)
       });
-    // }
-
   };
 
   return (

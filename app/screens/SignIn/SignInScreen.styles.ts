@@ -6,9 +6,11 @@ import { Colors, Font, Layout } from "style";
 const styles = StyleSheet.create({
   imageBackground: {
     height: vh(100),
+    width: vw(100)
   },
   container: {
-    height: vh(100),
+    flex:1
+    // height: vh(100),
   },
   logoContainer: {
     position: "absolute",

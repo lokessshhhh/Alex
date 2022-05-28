@@ -7,10 +7,11 @@ const styles = StyleSheet.create({
   imageBackground: {
     // flex:1
     height: vh(100),
+    width: vw(100)
   },
   container: {
-    height: vh(100),
-    // flex: 1
+    // height: vh(100),
+    flex: 1
   },
   logoContainer: {
     position: "absolute",

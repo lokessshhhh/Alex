@@ -112,9 +112,6 @@ const ForgotPwdNewScreen: NavStatelessComponent = () => {
     }
   };
   return (
-    // <ImageBackground source={imagePath["background"]} style={styles.imageBackground}>
-
-    // </ImageBackground>
     <ScrollView style={styles.container}>
       <Image source={imagePath["background"]} style={styles.imageBackground} />
       <View style={styles.logoContainer}>

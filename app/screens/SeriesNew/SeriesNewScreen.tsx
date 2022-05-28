@@ -1,4 +1,4 @@
-import React, { useRef } from "react";
+import React, { useRef, useEffect } from "react";
 import {
   ScrollView,
   View,
@@ -7,6 +7,7 @@ import {
   TextInput,
   Dimensions,
   Animated,
+  FlatList
 } from "react-native";
 import Modal from "react-native-modal";
 import { useNavigation, useRoute } from "@react-navigation/native";
@@ -18,16 +19,16 @@ import {
   AntDesign,
   Ionicons,
 } from "@expo/vector-icons";
-import { LinearGradient } from "expo-linear-gradient";
 import { vw, vh } from "react-native-css-vh-vw";
 import { Snackbar } from "react-native-paper";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 import { navigate } from "navigation";
 import { NavStatelessComponent } from "interfaces";
 import { Icon, Text, Input, Button } from "components";
 import { Colors, Font } from "style";
 
-import imagesPath from "../../constant/imagePath";
+import BaseURl from "constant/BaseURL";
 import navigationOptions from "./SeriesNewScreen.navigationOptions";
 import styles from "./SeriesNewScreen.styles";
 import imagePath from "../../constant/imagePath";
@@ -49,6 +50,9 @@ const SeriesNewScreen: NavStatelessComponent = () => {
   const [modalSimilarDetail, setModalSimilarDetail] = React.useState(false);
   const [modalLogline, setModalLogline] = React.useState(false);
   const [modalLoglineInfo, setModalLoglineInfo] = React.useState(false);
+
+  const [actorData, setActorData] = React.useState<any>();
+  const [similarSeriesData, setSimilarSeriesData] = React.useState<any>();
 
   //search states
   const [similarSearch, setSimilarSearch] = React.useState("");
@@ -154,6 +158,33 @@ const SeriesNewScreen: NavStatelessComponent = () => {
     extrapolateLeft: "identity",
     extrapolateRight: "clamp",
   });
+
+  useEffect(() => {
+    seriesDetails()
+  }, [])
+
+  //get series details
+  const seriesDetails = async () => {
+    const token = await AsyncStorage.getItem('authToken')
+
+    fetch(BaseURl + 'series/seriesDetails', {
+      method: 'get',
+      headers: {
+        "Authorization": `Bearer ${token}`,
+      }
+    })
+      .then((response) => response.json())
+      .then((responseJson) => {
+        console.log(responseJson)
+        if (responseJson.code === 200) {
+          setActorData(responseJson.data.actors)
+          setSimilarSeriesData(responseJson.data.similarSeries)
+        }
+      })
+      .catch((error) => {
+        console.log(error)
+      })
+  }
 
   return (
     <ScrollView style={{ backgroundColor: Colors.GradTop }}>
@@ -675,91 +706,43 @@ const SeriesNewScreen: NavStatelessComponent = () => {
           <TouchableOpacity style={styles.modalAddBtn} onPress={() => setModalGenre(false)}>
             <AntDesign name="plus" size={20} color={Colors.blue} />
           </TouchableOpacity>
-          <ScrollView>
-            <View style={[styles.catBtnContainer, { display: "flex", flexDirection: "row" }]}>
-              <ScrollView horizontal={true}>
-                <View style={styles.castInfo}>
-                  <Image
-                    source={imagePath["avatar3"]}
-                    style={{ width: 64, height: 64, borderRadius: 32, marginRight: 16 }}
-                  />
-                  <View style={{ display: "flex", flexDirection: "column" }}>
-                    <Text.ParagraphTitle style={{ marginBottom: 8, fontWeight: "700" }}>
-                      {"Keano Reeves"}
-                    </Text.ParagraphTitle>
-                    <Text.Tertiary>{"Hero: John Wick"}</Text.Tertiary>
-                  </View>
-                </View>
-                <View style={{ display: "flex", flexDirection: "row" }}>
-                  <TouchableOpacity onPress={() => setModalNewActor(true)}>
-                    <View style={styles.editCastBtn}>
-                      <Icon name="Edit_white" width="24" height="24" fill="none" />
+          <FlatList
+            data={actorData}
+            keyExtractor={(item: any) => item._id}
+            renderItem={({ item }) => {
+              return (
+                <TouchableOpacity style={[styles.catBtnContainer, { display: "flex", flexDirection: "row" }]}>
+                  <ScrollView horizontal={true}>
+                    <View style={styles.castInfo}>
+                      <Image
+                        source={{ uri: item.actorImage }}
+                        style={{ width: 64, height: 64, borderRadius: 32, marginRight: 16 }}
+                      />
+                      <View style={{ display: "flex", flexDirection: "column" }}>
+                        <Text.ParagraphTitle style={{ marginBottom: 8, fontWeight: "700" }}>
+                          {item.actorName}
+                        </Text.ParagraphTitle>
+                        <Text.Tertiary>{`Hero: ${item.heroName}`}</Text.Tertiary>
+                      </View>
                     </View>
-                  </TouchableOpacity>
+                    <View style={{ display: "flex", flexDirection: "row" }}>
+                      <TouchableOpacity onPress={() => setModalNewActor(true)}>
+                        <View style={styles.editCastBtn}>
+                          <Icon name="Edit_white" width="24" height="24" fill="none" />
+                        </View>
+                      </TouchableOpacity>
 
-                  <TouchableOpacity onPress={() => setModalDelActor(true)}>
-                    <View style={[styles.editCastBtn, { backgroundColor: "rgba(255, 69, 58, 1)" }]}>
-                      <Feather name="trash-2" size={24} color={Colors.white} />
+                      <TouchableOpacity onPress={() => setModalDelActor(true)}>
+                        <View style={[styles.editCastBtn, { backgroundColor: "rgba(255, 69, 58, 1)" }]}>
+                          <Feather name="trash-2" size={24} color={Colors.white} />
+                        </View>
+                      </TouchableOpacity>
                     </View>
-                  </TouchableOpacity>
-                </View>
-              </ScrollView>
-            </View>
-
-            <View style={[styles.catBtnContainer, { display: "flex", flexDirection: "row" }]}>
-              <ScrollView horizontal={true}>
-                <View style={styles.castInfo}>
-                  <Image
-                    source={imagePath["avatar2"]}
-                    style={{ width: 64, height: 64, borderRadius: 32, marginRight: 16 }}
-                  />
-                  <View>
-                    <Text.ParagraphTitle style={{ marginBottom: 8, fontWeight: "700" }}>
-                      {"Laetitia Casta"}
-                    </Text.ParagraphTitle>
-                    <Text.Tertiary>{"Hero: Jessica Jones"}</Text.Tertiary>
-                  </View>
-                </View>
-                <View style={{ display: "flex", flexDirection: "row" }}>
-                  <TouchableOpacity onPress={() => setModalNewActor(true)}>
-                    <View style={styles.editCastBtn}>
-                      <Icon name="Edit_white" width="24" height="24" fill="none" />
-                    </View>
-                  </TouchableOpacity>
-
-                  <TouchableOpacity onPress={() => setModalDelActor(true)}>
-                    <View style={[styles.editCastBtn, { backgroundColor: "rgba(255, 69, 58, 1)" }]}>
-                      <Feather name="trash-2" size={24} color={Colors.white} />
-                    </View>
-                  </TouchableOpacity>
-                </View>
-              </ScrollView>
-            </View>
-
-            <View style={[styles.catBtnContainer, { display: "flex", flexDirection: "row" }]}>
-              <View
-                style={[
-                  styles.castInfo,
-                  {
-                    backgroundColor: Colors.transparent,
-                    borderColor: Colors.btnBack,
-                    borderWidth: 1,
-                  },
-                ]}
-              >
-                <Image
-                  source={imagePath["avatar4"]}
-                  style={{ width: 64, height: 64, borderRadius: 32, marginRight: 16 }}
-                />
-                <View style={{}}>
-                  <Text.ParagraphTitle style={{ marginBottom: 8, fontWeight: "700" }}>
-                    {"Margot Robbie"}
-                  </Text.ParagraphTitle>
-                  <Text.Tertiary>{"Hero: Not indicated"}</Text.Tertiary>
-                </View>
-              </View>
-            </View>
-          </ScrollView>
+                  </ScrollView>
+                </TouchableOpacity>
+              )
+            }}
+          />  
           <Button.Primary
             onPress={() => setModalCast(false)}
             textType={"Primary"}
@@ -988,7 +971,38 @@ const SeriesNewScreen: NavStatelessComponent = () => {
             onChangeText={(search) => setSimilarSearch(search)}
             placeholderTextColor={Colors.white1}
           />
-          {filterSimilars(movies).map((movie, index) => (
+          <FlatList
+             data={similarSeriesData}
+             keyExtractor={(item:any) => item._id}
+             showsHorizontalScrollIndicator={false}
+             renderItem={({item})=> {
+               return (
+                <View style={styles.similarMovie}>
+                <Image
+                  source={{uri: item.seriesPoster}}
+                  style={{ width: 80, height: 100, borderRadius: 16, marginRight: 16 }}
+                />
+                <View style={{ width:'70%'}}>
+                  <TouchableOpacity
+                    style={{ display: "flex", flexDirection: "row", marginBottom: 8 }}
+                    onPress={() => setModalSimilarDetail(true)}
+                  >
+                    <Text.ParagraphTitle >{item.seriesName}</Text.ParagraphTitle>
+                    <MaterialIcons
+                      name={"keyboard-arrow-right"}
+                      size={24}
+                      color={Colors.white}
+                      style={{ textAlignVertical: "center" }}
+                    />
+                  </TouchableOpacity>
+  
+                  {/* <Text.Tertiary>{movie.movieDesShort}</Text.Tertiary> */}
+                </View>
+              </View>
+               )
+             }}
+          />
+          {/* {filterSimilars(movies).map((movie, index) => (
             <View key={index} style={styles.similarMovie}>
               <Image
                 source={imagePath[movie.movieThumb]}
@@ -1011,7 +1025,7 @@ const SeriesNewScreen: NavStatelessComponent = () => {
                 <Text.Tertiary>{movie.movieDesShort}</Text.Tertiary>
               </View>
             </View>
-          ))}
+          ))} */}
         </View>
       </Modal>
 
@@ -1042,6 +1056,7 @@ const SeriesNewScreen: NavStatelessComponent = () => {
           </TouchableOpacity>
 
           <Text.ModalTitle style={{ marginBottom: 25 }}>{"Similar Movies"}</Text.ModalTitle>
+          
           <ScrollView style={{ width: "100%", paddingBottom: 40 }}>
             <View style={[styles.similarMovie, { borderBottomWidth: 0 }]}>
               <Image
