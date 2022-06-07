@@ -22,11 +22,12 @@ import {
 import { vw, vh } from "react-native-css-vh-vw";
 import { Snackbar } from "react-native-paper";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-
+import * as ImagePicker from "expo-image-picker";
 import { navigate } from "navigation";
 import { NavStatelessComponent } from "interfaces";
 import { Icon, Text, Input, Button } from "components";
 import { Colors, Font } from "style";
+import { Movie } from "constant/Genres/Movie"
 
 import BaseURl from "constant/BaseURL";
 import navigationOptions from "./SeriesNewScreen.navigationOptions";
@@ -51,78 +52,48 @@ const SeriesNewScreen: NavStatelessComponent = () => {
   const [modalLogline, setModalLogline] = React.useState(false);
   const [modalLoglineInfo, setModalLoglineInfo] = React.useState(false);
 
-  const [actorData, setActorData] = React.useState<any>();
   const [similarSeriesData, setSimilarSeriesData] = React.useState<any>();
-
+  const [seriesData, setSeriesData] = React.useState<any>();
+  const [seriesBanner, setSerriesBanner] = React.useState("");
+  const [title, setTitle] = React.useState("");
+  const [tagLine, setTagLine] = React.useState("");
+  const [synopsis, setSynopsis] = React.useState("");
+  const [type, settype] = React.useState("Serial");
+  //logline
+  const [incident, setIncident] = React.useState("");
+  const [protagonist, setProtagonist] = React.useState("");
+  const [action, setAction] = React.useState("");
+  const [antagonist, setAntagonist] = React.useState("");
+  const [loglineData, setLoglineData] = React.useState<any>();
+  const [logLine, setLogLine] = React.useState("");
+  //genres
+  const [genreData, setGenreData] = React.useState([]);
+  const [subGenre, setSubGenre] = React.useState([]);
+  const [selectedSubGenre, setSelectedSubGenre] = React.useState([]);
+  const [genreIndex, setGenreIndex] = React.useState([]);
+  const [singleGenre, setSingleGenre] = React.useState<any>();
+  //New Actor
+  const [actorName, setActorName] = React.useState("");
+  const [heroName, setHeroName] = React.useState("");
+  const [actorDescription, setActorDescription] = React.useState("");
+  const [actorData, setActorData] = React.useState([]);
+  const [actorDataList, setActorDataList] = React.useState<any>();
+  const [actorImage, setActorImage] = React.useState("");
+  const [actorIndex, setActorIndex] = React.useState([]);
+  const [selectedActor, setSelectedActor] = React.useState([]);
+  //tag
+  const [tags, setTags] = React.useState([]);
+  const [tagString, setTagString] = React.useState("");
+  const [tagArray, setTagArray] = React.useState<any>();
   //search states
   const [similarSearch, setSimilarSearch] = React.useState("");
+
   const filterSimilars = (list) => {
     return list.filter((listItem) =>
       listItem.movieTitle.toLowerCase().includes(similarSearch.toLowerCase())
     );
   };
-  const movies = [
-    {
-      movieId: 1,
-      movieTitle: "Journey to the center of the earth ",
-      movieDesShort:
-        "On a quest to find out what happened to his missing brother, a scientist, his...",
-      movieThumb: "thumb7",
-    },
-    {
-      movieId: 2,
-      movieTitle: "Journey to the Mars",
-      movieDesShort:
-        "On a quest to find out what happened to his missing brother, a scientist, his...",
-      movieThumb: "thumb8",
-    },
-    {
-      movieId: 3,
-      movieTitle: "Journey to the center of the earth ",
-      movieDesShort:
-        "On a quest to find out what happened to his missing brother, a scientist, his...",
-      movieThumb: "thumb7",
-    },
-    {
-      movieId: 4,
-      movieTitle: "Journey to the Mars ",
-      movieDesShort:
-        "On a quest to find out what happened to his missing brother, a scientist, his...",
-      movieThumb: "thumb8",
-    },
-    {
-      movieId: 3,
-      movieTitle: "Journey to the center of the earth ",
-      movieDesShort:
-        "On a quest to find out what happened to his missing brother, a scientist, his...",
-      movieThumb: "thumb7",
-    },
-    {
-      movieId: 4,
-      movieTitle: "Journey to the Mars ",
-      movieDesShort:
-        "On a quest to find out what happened to his missing brother, a scientist, his...",
-      movieThumb: "thumb8",
-    },
-  ];
 
-  const genreModalList = [
-    { name: "Comedy", image: "genre_comedy", number: 7 },
-    { name: "Horror", image: "genre_horror", number: 0 },
-    { name: "Thriller", image: "genre_thriller", number: 0 },
-    { name: "Romance", image: "genre_romance", number: 0 },
-    { name: "Action", image: "genre_action", number: 10 },
-    { name: "Drama", image: "genre_drama", number: 0 },
-    { name: "Mystery", image: "genre_mystery", number: 0 },
-    { name: "Fantasy", image: "genre_fantasy", number: 0 },
-    { name: "Adventure", image: "genre_adventure", number: 0 },
-    { name: "Crime", image: "genre_crime", number: 2 },
-    { name: "Animation", image: "genre_animation", number: 0 },
-    { name: "Biography", image: "genre_biography", number: 0 },
-    { name: "History", image: "genre_history", number: 0 },
-    { name: "Family", image: "genre_family", number: 0 },
-    { name: "Sci-FI", image: "genre_sci", number: 5 },
-  ];
   const saveProject = () => {
     setSnackBarVisible(true);
     setTimeout(() => {
@@ -163,6 +134,84 @@ const SeriesNewScreen: NavStatelessComponent = () => {
     seriesDetails()
   }, [])
 
+  const saveTags = () => {
+    setModalTags(false)
+    let data = { "tags": tags }
+    tags.push(tagString)
+    console.log("-------Tags-------", data)
+    setTagArray(data)
+    setTagString('')
+  }
+
+  const saveSimilarSeries = (name: any, poster: any) => {
+    let movie = []
+    movie.push({ seriesPoster: poster, seriesName: name })
+    let data = { similarSeries: movie }
+    console.log(data)
+    setSeriesData(data)
+    setModalSimilarMovies(false)
+  }
+
+  const saveGenreData = (item, index) => {
+    if (genreIndex.length > 0) {
+      if (genreIndex.includes(index)) {
+        let removeIndex = genreIndex.filter((i) => i !== index)
+        let remove = selectedSubGenre.filter((i) => i !== item)
+        setGenreIndex(removeIndex)
+        setSelectedSubGenre(remove)
+      } else {
+        setGenreIndex((prevState: any) => [...prevState, index])
+        setSelectedSubGenre((prevState: any) => [...prevState, item])
+      }
+    } else {
+      setGenreIndex((prevState: any) => [...prevState, index])
+      setSelectedSubGenre((prevState: any) => [...prevState, item])
+    }
+  }
+
+  const saveGeneres = () => {
+    let data = {}
+    let allGenre = []
+    data[singleGenre.name] = selectedSubGenre
+    console.log(data, '======---------', selectedSubGenre.length);
+    allGenre.push(data)
+    if (genreData.length === 0) { setGenreData(allGenre) }
+    else { setGenreData(prevState => [...prevState, data]) }
+    setModalGenreDetail(false)
+    setGenreIndex([])
+    setSelectedSubGenre([])
+  }
+
+  const saveLogline = () => {
+    const logline = { logline: { incitingIncident: incident, protagonist: protagonist, Action: action, antagonist: antagonist } }
+    setModalLogline(false)
+    console.log("-------Logline-------", logline)
+    setLoglineData(logline)
+    setLogLine(incident + ' ' + protagonist + ' ' + action + ' ' + antagonist)
+  }
+
+  const saveActor = () => {
+    setModalCast(false)
+    let data = { "actors": actorData }
+    console.log(data)
+    setActorDataList(data)
+  }
+
+  const pickMovieBanner = async () => {
+    let result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.All,
+      allowsEditing: true,
+      aspect: [4, 3],
+      quality: 1,
+    });
+    console.log(result);
+    if (modalNewActor) {
+      setActorImage(result.uri)
+    } else {
+      setSerriesBanner(result.uri);
+    }
+  }
+
   //get series details
   const seriesDetails = async () => {
     const token = await AsyncStorage.getItem('authToken')
@@ -177,13 +226,178 @@ const SeriesNewScreen: NavStatelessComponent = () => {
       .then((responseJson) => {
         console.log(responseJson)
         if (responseJson.code === 200) {
-          setActorData(responseJson.data.actors)
-          setSimilarSeriesData(responseJson.data.similarSeries)
+          let data = []
+          let movies = []
+          responseJson.data.map(item => {
+            item.actors.map(actor => {
+              data.push(actor)
+              if (actorData.length === 0) { setActorData(data) }
+              else { setActorData(prevState => [...prevState, actor]) }
+            })
+            item.similarSeries.map(movie => {
+              console.log("------------", movie)
+              movies.push(movie)
+            })
+          })
+          setSimilarSeriesData(movies)
         }
       })
       .catch((error) => {
         console.log(error)
       })
+  }
+
+  const saveNewActor = async () => {
+    const token = await AsyncStorage.getItem('authToken')
+    var formData = new FormData();
+    let filename = actorImage.split('/').pop();
+
+    formData.append('actorName', actorName);
+    formData.append('heroName', heroName);
+    formData.append('actorDescription', actorDescription);
+    formData.append('actorImage', {
+      uri: actorImage,
+      name: filename,
+      type: "image/jpeg"
+    });
+
+    fetch(BaseURl + 'movies/actorDetails', {
+      method: 'post',
+      headers: {
+        "Authorization": `Bearer ${token}`,
+      },
+      body: formData
+    })
+      .then((response) => response.json())
+      .then((responseJson) => {
+        console.log(responseJson)
+        if (responseJson.code === 200) {
+          let data = []
+          alert(responseJson.message)
+          data.push(responseJson.data)
+          console.log("=====================", actorData)
+          if (actorData.length === 0) { setActorData(data) }
+          else { setActorData(prevState => [...prevState, responseJson.data]) }
+          setActorName("")
+          setActorDescription("")
+          setHeroName("")
+          setActorImage("")
+          setModalNewActor(false)
+        } else {
+          alert(responseJson.message)
+        }
+      })
+      .catch((error) => {
+        console.log(error)
+      })
+  }
+
+  const saveSeriesDetails = async () => {
+    const token = await AsyncStorage.getItem('authToken')
+
+    const uriPart = seriesBanner.split('.');
+    const fileExtension = uriPart[uriPart.length - 1];
+    const genres = { genres: genreData }
+
+    let formData = new FormData()
+    formData.append('type', type)
+    formData.append(type === "Movie"
+      ? "movieBanner" : type === "Book"
+        ? "bookBanner" : type === "Serial"
+          ? "seriesBanner" : "", {
+      uri: seriesBanner,
+      name: `photo.${fileExtension}`,
+      type: `image/${fileExtension}`
+    });
+    formData.append('title', title)
+    formData.append('synopsis', synopsis)
+    formData.append('logline', JSON.stringify(loglineData))
+    formData.append('genres', JSON.stringify(genres))
+    formData.append('tagline', tagLine)
+    formData.append('tags', JSON.stringify(tagArray))
+    formData.append('actors', JSON.stringify(actorDataList))
+    formData.append(type === "Movie"
+      ? "similarMovies" : type === "Book"
+        ? "similarBooks" : type === "Serial"
+          ? "similarSeries" : ""
+      , JSON.stringify(seriesData))
+
+    console.log("formData", formData);
+
+    if (type === "Movie") {
+      fetch(BaseURl + 'movies/basicDetails', {
+        method: 'post',
+        headers: {
+          "Authorization": `Bearer ${token}`,
+        },
+        body: formData
+      })
+        .then((response) => response.json())
+        .then((responseJson) => {
+          console.log("responseJson  ", responseJson)
+          alert(responseJson.message)
+          navigation.goBack()
+        })
+        .catch((error) => {
+          console.log(error)
+        })
+    }
+    else if (type === "Book") {
+      fetch(BaseURl + 'books/basicDetails', {
+        method: 'post',
+        headers: {
+          "Authorization": `Bearer ${token}`,
+        },
+        body: formData
+      })
+        .then((response) => response.json())
+        .then((responseJson) => {
+          console.log("responseJson  ", responseJson)
+          alert(responseJson.message)
+          navigation.goBack()
+        })
+        .catch((error) => {
+          console.log(error)
+        })
+    }
+    else if (type === "Serial") {
+      fetch(BaseURl + 'series/basicDetails', {
+        method: 'post',
+        headers: {
+          "Authorization": `Bearer ${token}`,
+        },
+        body: formData
+      })
+        .then((response) => response.json())
+        .then((responseJson) => {
+          console.log("responseJson  ", responseJson)
+          if (responseJson.code === 200) {
+            alert(responseJson.message)
+            navigation.goBack()
+          }
+        })
+        .catch((error) => {
+          console.log(error)
+        })
+    }
+  }
+
+  const selectActors = (item, index) => {
+    if (actorIndex.length > 0) {
+      if (actorIndex.includes(index)) {
+        let removeIndex = actorIndex.filter((i) => i !== index)
+        let remove = selectedActor.filter((i) => i.actorId !== item.actorId)
+        console.log(remove)
+        setActorIndex(removeIndex)
+        setSelectedActor(remove)
+      } else {
+        setActorIndex((prevState: any) => [...prevState, index])
+        setSelectedActor((prevState: any) => [...prevState, item])
+      }
+    } else {
+      setActorIndex((prevState: any) => [...prevState, index])
+      setSelectedActor((prevState: any) => [...prevState, item])
+    }
   }
 
   return (
@@ -235,24 +449,25 @@ const SeriesNewScreen: NavStatelessComponent = () => {
           })}
         >
           <View style={styles.movieTitle}>
-            <View style={styles.thumb}>
-              <TouchableOpacity style={{ alignSelf: "center", paddingVertical: 26 }}>
-                <Icon name="Thumb" width="24" height="24" fill="none" />
-              </TouchableOpacity>
-            </View>
+            <TouchableOpacity onPress={() => pickMovieBanner()} style={styles.thumb}>
+              {seriesBanner
+                ? <Image source={{ uri: seriesBanner }} style={{ flex: 1, borderRadius: 16, }} />
+                : <View style={{ alignItems: 'center', justifyContent: 'center', flex: 1 }}><Icon name="Thumb" width="24" height="24" fill="none" /></View>}
+            </TouchableOpacity>
             <View style={{ flex: 1 }}>
               <Text.ParagraphTitle style={{ marginBottom: 8 }}>{"Title"}</Text.ParagraphTitle>
-              <Input placeholder={"Enter text"} value={""} />
+              <Input placeholder={"Enter text"} value={title} onChangeText={(text) => setTitle(text)} />
             </View>
           </View>
           <View>
             <View style={styles.contentItem}>
               <Text.ParagraphTitle style={{ marginBottom: 8 }}>{"Logline"}</Text.ParagraphTitle>
               <TextInput
-                value=""
+                value={logLine}
                 placeholder={"Describe your question"}
                 placeholderTextColor={Colors.white1}
                 style={{
+                  color: '#fff',
                   height: 80,
                   backgroundColor: Colors.inputBack,
                   padding: 16,
@@ -267,16 +482,18 @@ const SeriesNewScreen: NavStatelessComponent = () => {
 
             <View style={styles.contentItem}>
               <Text.ParagraphTitle style={{ marginBottom: 8 }}>{"Tagline"}</Text.ParagraphTitle>
-              <Input placeholder={"Enter text"} value={""} />
+              <Input placeholder={"Enter text"} value={tagLine} onChangeText={(text) => setTagLine(text)} />
             </View>
 
             <View style={styles.contentItem}>
               <Text.ParagraphTitle style={{ marginBottom: 8 }}>{"Synopsis"}</Text.ParagraphTitle>
               <TextInput
-                value=""
+                value={synopsis}
+                onChangeText={(text) => setSynopsis(text)}
                 placeholder={"Describe your question"}
                 placeholderTextColor={Colors.white1}
                 style={{
+                  color: '#fff',
                   height: 96,
                   backgroundColor: Colors.inputBack,
                   padding: 16,
@@ -321,6 +538,32 @@ const SeriesNewScreen: NavStatelessComponent = () => {
 
             <View style={{ marginTop: 24 }}>
               <Text.TagTitle style={{ fontSize: 22, marginBottom: 8 }}>{"Tags"}</Text.TagTitle>
+              <FlatList
+                data={tags}
+                horizontal
+                renderItem={({ item, index }) => {
+                  return (
+                    <View style={{
+                      flexDirection: 'row',
+                      paddingHorizontal: 12,
+                      paddingVertical: 8,
+                      backgroundColor: "rgba(29, 174, 255, 0.15)",
+                      borderRadius: 20,
+                      alignItems: 'center',
+                      bottom: 2
+                    }} >
+                      <Text.Primary>{item}</Text.Primary>
+                      <TouchableOpacity style={{ marginLeft: 5 }} onPress={() => {
+                        console.log(index)
+                        var r = tags.filter(i => i !== item)
+                        setTags(r)
+                      }}>
+                        <AntDesign name="close" size={20} color={Colors.blue} />
+                      </TouchableOpacity>
+                    </View>
+                  )
+                }}
+              />
               <View style={{ display: "flex", flexDirection: "row" }}>
                 <TouchableOpacity onPress={() => setModalTags(true)}>
                   <Text.Primary style={styles.normalBtn}>{"Add"}</Text.Primary>
@@ -374,7 +617,7 @@ const SeriesNewScreen: NavStatelessComponent = () => {
         </Snackbar>
         <View style={{ marginBottom: 16 }}>
           <Button.White
-            onPress={() => saveProject()}
+            onPress={() => saveSeriesDetails()}
             textType={"Primary"}
             style={{
               alignItems: "center",
@@ -411,17 +654,26 @@ const SeriesNewScreen: NavStatelessComponent = () => {
             }}
           ></View>
           <Text.ModalTitle style={{ marginBottom: 25 }}>{"Project Type"}</Text.ModalTitle>
-          <TouchableOpacity style={styles.catBtnContainer} onPress={() => setModalCategory(false)}>
+          <TouchableOpacity style={styles.catBtnContainer} onPress={() => {
+            settype("Movie")
+            setModalCategory(false)
+          }}>
             <View style={styles.catBtnText}>
               <Text.Primary>{"Movie"}</Text.Primary>
             </View>
           </TouchableOpacity>
-          <TouchableOpacity style={styles.catBtnContainer} onPress={() => setModalCategory(false)}>
+          <TouchableOpacity style={styles.catBtnContainer} onPress={() => {
+            settype("Serial")
+            setModalCategory(false)
+          }}>
             <View style={styles.catBtnText}>
               <Text.Primary>{"Series"}</Text.Primary>
             </View>
           </TouchableOpacity>
-          <TouchableOpacity style={styles.catBtnContainer} onPress={() => setModalCategory(false)}>
+          <TouchableOpacity style={styles.catBtnContainer} onPress={() => {
+            settype("Book")
+            setModalCategory(false)
+          }}>
             <View style={styles.catBtnText}>
               <Text.Primary>{"Book"}</Text.Primary>
             </View>
@@ -456,10 +708,15 @@ const SeriesNewScreen: NavStatelessComponent = () => {
           <Text.ModalTitle style={{ marginBottom: 25 }}>{"Genre"}</Text.ModalTitle>
           <ScrollView style={{ width: "100%" }}>
             <View style={styles.genreList}>
-              {genreModalList.map((genre, index) => (
+              {Movie.map((genre, index) => (
                 <TouchableOpacity
                   style={styles.genreBtnContainer}
-                  onPress={() => setModalGenreDetail(true)}
+                  onPress={() => {
+                    let data = { name: genre.name, image: genre.image }
+                    setSingleGenre(data)
+                    setSubGenre(genre.subGenre)
+                    setModalGenreDetail(true)
+                  }}
                   key={index}
                 >
                   <View style={styles.genreBtnContent}>
@@ -488,194 +745,67 @@ const SeriesNewScreen: NavStatelessComponent = () => {
             <Text.TagTitle>{"Save"}</Text.TagTitle>
           </Button.Primary>
         </View>
-      </Modal>
-
-      {/* SubGenre Modal */}
-      <Modal
-        isVisible={modalGenreDetail}
-        onRequestClose={() => setModalGenreDetail(false)}
-        onBackdropPress={() => setModalGenreDetail(false)}
-        deviceWidth={deviceWidth}
-        style={{ width: "100%", marginLeft: 0, marginBottom: 0, justifyContent: "flex-end" }}
-      >
-        <View style={[styles.modalContainer, { height: vh(100) - 50, paddingBottom: 20 }]}>
-          <View
-            style={{
-              width: 40,
-              height: 4,
-              backgroundColor: Colors.white,
-              opacity: 0.3,
-              marginTop: 8,
-              marginBottom: 18,
-            }}
-          ></View>
-          <TouchableOpacity style={styles.modalBackBtn} onPress={() => setModalGenreDetail(false)}>
-            <Ionicons name="arrow-back" size={20} color={Colors.blue} />
-          </TouchableOpacity>
-          <View style={{ display: "flex", flexDirection: "row" }}>
-            <Image source={imagePath["genre_sci"]} style={{ width: 24, height: 24 }} />
-            <Text.ModalTitle style={{ marginBottom: 25, marginLeft: 6 }}>
-              {"Sci-Fi"}
-            </Text.ModalTitle>
-          </View>
-          <ScrollView style={{ width: "100%" }}>
-            <TouchableOpacity
-              style={styles.catBtnContainer}
-              onPress={() => setModalGenreDetail(false)}
-            >
-              <View style={styles.catBtnText}>
-                <Text.Primary>{"Alternative History"}</Text.Primary>
-              </View>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={styles.catBtnContainer}
-              onPress={() => setModalGenreDetail(false)}
-            >
-              <View
-                style={[
-                  styles.catBtnText,
-                  { borderColor: Colors.btnBack, borderWidth: 1, backgroundColor: "rgba(0,0,0,0)" },
-                ]}
-              >
-                <Text.Primary>{"Alien Invasion"}</Text.Primary>
-              </View>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={styles.catBtnContainer}
-              onPress={() => setModalGenreDetail(false)}
-            >
-              <View
-                style={[
-                  styles.catBtnText,
-                  { borderColor: Colors.btnBack, borderWidth: 1, backgroundColor: "rgba(0,0,0,0)" },
-                ]}
-              >
-                <Text.Primary>{"Alien Invasion"}</Text.Primary>
-              </View>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={styles.catBtnContainer}
-              onPress={() => setModalGenreDetail(false)}
-            >
-              <View style={styles.catBtnText}>
-                <Text.Primary>{"Alternative History"}</Text.Primary>
-              </View>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={styles.catBtnContainer}
-              onPress={() => setModalGenreDetail(false)}
-            >
-              <View
-                style={[
-                  styles.catBtnText,
-                  { borderColor: Colors.btnBack, borderWidth: 1, backgroundColor: "rgba(0,0,0,0)" },
-                ]}
-              >
-                <Text.Primary>{"Alien Invasion"}</Text.Primary>
-              </View>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={styles.catBtnContainer}
-              onPress={() => setModalGenreDetail(false)}
-            >
-              <View
-                style={[
-                  styles.catBtnText,
-                  { borderColor: Colors.btnBack, borderWidth: 1, backgroundColor: "rgba(0,0,0,0)" },
-                ]}
-              >
-                <Text.Primary>{"Alien Invasion"}</Text.Primary>
-              </View>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={styles.catBtnContainer}
-              onPress={() => setModalGenreDetail(false)}
-            >
-              <View style={styles.catBtnText}>
-                <Text.Primary>{"Alternative History"}</Text.Primary>
-              </View>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={styles.catBtnContainer}
-              onPress={() => setModalGenreDetail(false)}
-            >
-              <View
-                style={[
-                  styles.catBtnText,
-                  { borderColor: Colors.btnBack, borderWidth: 1, backgroundColor: "rgba(0,0,0,0)" },
-                ]}
-              >
-                <Text.Primary>{"Alien Invasion"}</Text.Primary>
-              </View>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={styles.catBtnContainer}
-              onPress={() => setModalGenreDetail(false)}
-            >
-              <View
-                style={[
-                  styles.catBtnText,
-                  { borderColor: Colors.btnBack, borderWidth: 1, backgroundColor: "rgba(0,0,0,0)" },
-                ]}
-              >
-                <Text.Primary>{"Alien Invasion"}</Text.Primary>
-              </View>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={styles.catBtnContainer}
-              onPress={() => setModalGenreDetail(false)}
-            >
-              <View style={styles.catBtnText}>
-                <Text.Primary>{"Alternative History"}</Text.Primary>
-              </View>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={styles.catBtnContainer}
-              onPress={() => setModalGenreDetail(false)}
-            >
-              <View
-                style={[
-                  styles.catBtnText,
-                  { borderColor: Colors.btnBack, borderWidth: 1, backgroundColor: "rgba(0,0,0,0)" },
-                ]}
-              >
-                <Text.Primary>{"Alien Invasion"}</Text.Primary>
-              </View>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={styles.catBtnContainer}
-              onPress={() => setModalGenreDetail(false)}
-            >
-              <View
-                style={[
-                  styles.catBtnText,
-                  { borderColor: Colors.btnBack, borderWidth: 1, backgroundColor: "rgba(0,0,0,0)" },
-                ]}
-              >
-                <Text.Primary>{"Alien Invasion"}</Text.Primary>
-              </View>
-            </TouchableOpacity>
-          </ScrollView>
-          <TouchableOpacity
-            style={{ width: "100%", marginTop: 20 }}
-            onPress={() => setModalGenreDetail(false)}
-          >
+        {/* SubGenre Modal */}
+        <Modal
+          isVisible={modalGenreDetail}
+          onRequestClose={() => setModalGenreDetail(false)}
+          onBackdropPress={() => setModalGenreDetail(false)}
+          deviceWidth={deviceWidth}
+          style={{ width: "100%", marginLeft: 0, marginBottom: 0, justifyContent: "flex-end" }}
+        >
+          <View style={[styles.modalContainer, { height: vh(100) - 50, paddingBottom: 20 }]}>
             <View
               style={{
-                width: "100%",
-                backgroundColor: Colors.btnBack,
-                paddingVertical: 12,
-                borderRadius: 24,
+                width: 40,
+                height: 4,
+                backgroundColor: Colors.white,
+                opacity: 0.3,
+                marginTop: 8,
+                marginBottom: 18,
               }}
-            >
-              <Text.TagTitle style={{ alignSelf: "center" }}>{"Back"}</Text.TagTitle>
+            ></View>
+            <TouchableOpacity style={styles.modalBackBtn} onPress={() => setModalGenreDetail(false)}>
+              <Ionicons name="arrow-back" size={20} color={Colors.blue} />
+            </TouchableOpacity>
+            <View style={{ display: "flex", flexDirection: "row" }}>
+              <Image source={singleGenre ? imagePath[singleGenre.image] : null} style={{ width: 24, height: 24 }} />
+              <Text.ModalTitle style={{ marginBottom: 25, marginLeft: 6 }}>
+                {singleGenre ? singleGenre.name : null}
+              </Text.ModalTitle>
             </View>
-          </TouchableOpacity>
-        </View>
+            <ScrollView style={{ width: "100%" }}>
+              {subGenre.map((item, index) => (
+                <TouchableOpacity
+                  key={index}
+                  style={styles.catBtnContainer}
+                  onPress={() => saveGenreData(item, index)}>
+                  <View style={styles.catBtnText}>
+                    <Text.Primary>{item}</Text.Primary>
+                    {genreIndex.map((i) => i === index ? <Image source={imagePath["check"]} style={{ width: 24, height: 24 }} /> : null)}
+                  </View>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+            <TouchableOpacity
+              style={{ width: "100%", marginTop: 20 }}
+              onPress={() => saveGeneres()}
+            >
+              <View
+                style={{
+                  width: "100%",
+                  backgroundColor: Colors.btnBack,
+                  paddingVertical: 12,
+                  borderRadius: 24,
+                }}
+              >
+                <Text.TagTitle style={{ alignSelf: "center" }}>{"Save"}</Text.TagTitle>
+              </View>
+            </TouchableOpacity>
+          </View>
+        </Modal>
       </Modal>
+
+
 
       {/* dreamcast Modal */}
       <Modal
@@ -703,136 +833,141 @@ const SeriesNewScreen: NavStatelessComponent = () => {
 
           <Text.ModalTitle style={{ marginBottom: 25 }}>{"Dream Cast"}</Text.ModalTitle>
 
-          <TouchableOpacity style={styles.modalAddBtn} onPress={() => setModalGenre(false)}>
+          <TouchableOpacity style={styles.modalAddBtn} onPress={() => setModalNewActor(true)}>
             <AntDesign name="plus" size={20} color={Colors.blue} />
           </TouchableOpacity>
-          <FlatList
-            data={actorData}
-            keyExtractor={(item: any) => item._id}
-            renderItem={({ item }) => {
-              return (
-                <TouchableOpacity style={[styles.catBtnContainer, { display: "flex", flexDirection: "row" }]}>
-                  <ScrollView horizontal={true}>
-                    <View style={styles.castInfo}>
-                      <Image
-                        source={{ uri: item.actorImage }}
-                        style={{ width: 64, height: 64, borderRadius: 32, marginRight: 16 }}
-                      />
-                      <View style={{ display: "flex", flexDirection: "column" }}>
-                        <Text.ParagraphTitle style={{ marginBottom: 8, fontWeight: "700" }}>
-                          {item.actorName}
-                        </Text.ParagraphTitle>
-                        <Text.Tertiary>{`Hero: ${item.heroName}`}</Text.Tertiary>
+          <ScrollView>
+            {actorData ? actorData.map((item, index) => (
+              <View style={[styles.catBtnContainer, { display: "flex", flexDirection: "row" }]} key={index}>
+                <ScrollView horizontal={true} >
+                  <TouchableOpacity style={styles.castInfo} onPress={() => selectActors(item, index)}>
+                    <Image
+                      source={{ uri: item.actorImage }}
+                      style={{ width: 64, height: 64, borderRadius: 32, marginRight: 16 }}
+                    />
+                    <View style={{ display: "flex", flexDirection: "column" }}>
+                      <Text.ParagraphTitle style={{ marginBottom: 8, fontWeight: "700" }}>
+                        {item.actorName}
+                      </Text.ParagraphTitle>
+                      <Text.Tertiary>{`Hero: ${item.heroName}`}</Text.Tertiary>
+                    </View>
+                    {actorIndex.map((i) => i === index ? <Image source={imagePath["check"]} style={{ width: 24, height: 24, marginLeft: 20 }} /> : null)}
+                  </TouchableOpacity>
+                  <View style={{ display: "flex", flexDirection: "row" }}>
+                    <TouchableOpacity onPress={() => setModalNewActor(true)}>
+                      <View style={styles.editCastBtn}>
+                        <Icon name="Edit_white" width="24" height="24" fill="none" />
                       </View>
-                    </View>
-                    <View style={{ display: "flex", flexDirection: "row" }}>
-                      <TouchableOpacity onPress={() => setModalNewActor(true)}>
-                        <View style={styles.editCastBtn}>
-                          <Icon name="Edit_white" width="24" height="24" fill="none" />
-                        </View>
-                      </TouchableOpacity>
+                    </TouchableOpacity>
+                    <TouchableOpacity onPress={() => setModalDelActor(true)}>
+                      <View style={[styles.editCastBtn, { backgroundColor: "rgba(255, 69, 58, 1)" }]}>
+                        <Feather name="trash-2" size={24} color={Colors.white} />
+                      </View>
+                    </TouchableOpacity>
+                  </View>
+                </ScrollView>
+              </View>
+            )) : null}
+          </ScrollView>
 
-                      <TouchableOpacity onPress={() => setModalDelActor(true)}>
-                        <View style={[styles.editCastBtn, { backgroundColor: "rgba(255, 69, 58, 1)" }]}>
-                          <Feather name="trash-2" size={24} color={Colors.white} />
-                        </View>
-                      </TouchableOpacity>
-                    </View>
-                  </ScrollView>
+          <Button.Primary
+            onPress={() => {
+              let data = { actors: selectedActor }
+              setActorDataList(data)
+              console.log(Object.assign(data))
+              setModalCast(false)
+            }}
+            textType={"Primary"}
+            style={{ alignItems: "center" }}
+          >
+            <Text.TagTitle>{"Attach Selected"}</Text.TagTitle>
+          </Button.Primary>
+        </View>
+        {/* newActor Modal */}
+        <Modal
+          isVisible={modalNewActor}
+          swipeDirection="down"
+          onSwipeComplete={() => setModalNewActor(false)}
+          onRequestClose={() => setModalNewActor(false)}
+          onBackdropPress={() => setModalNewActor(false)}
+          deviceWidth={deviceWidth}
+          style={{ width: "100%", marginLeft: 0, marginBottom: 0, justifyContent: "flex-end" }}
+        >
+          <View style={[styles.modalContainer, { height: vh(100) - 50, paddingBottom: 40 }]}>
+            <View
+              style={{
+                width: 40,
+                height: 4,
+                backgroundColor: Colors.white,
+                opacity: 0.3,
+                marginTop: 8,
+                marginBottom: 18,
+              }}
+            ></View>
+
+            <TouchableOpacity style={styles.modalBackBtn} onPress={() => setModalNewActor(false)}>
+              <Ionicons name="arrow-back" size={20} color={Colors.blue} />
+            </TouchableOpacity>
+
+            <Text.ModalTitle style={{ marginBottom: 25 }}>{"New Actor"}</Text.ModalTitle>
+
+            <View style={{ height: vh(90) - 150 }}>
+              <View style={[styles.catBtnContainer, { display: "flex", flexDirection: "row" }]}>
+                <View style={{ flex: 1, marginRight: 16 }}>
+                  <Input value={actorName} onChangeText={(text) => setActorName(text)} placeholder={"Actor's Name"} />
+                </View>
+                <TouchableOpacity
+                  style={{
+                    width: 44,
+                    height: 44,
+                    borderRadius: 22,
+                    backgroundColor: Colors.btnBack,
+                  }}
+                  onPress={() => pickMovieBanner()} >
+                  {actorImage
+                    ? <Image source={{ uri: actorImage }} style={{ flex: 1, borderRadius: 22, }} resizeMode='cover' />
+                    : <View style={{ padding: 10 }}><Icon name="User" width={96} height={96} fill={"none"} /></View>}
                 </TouchableOpacity>
-              )
-            }}
-          />  
-          <Button.Primary
-            onPress={() => setModalCast(false)}
-            textType={"Primary"}
-            style={{ alignItems: "center" }}
-          >
-            <Text.TagTitle>{"Attach Selected"}</Text.TagTitle>
-          </Button.Primary>
-        </View>
-      </Modal>
-
-      {/* newActor Modal */}
-      <Modal
-        isVisible={modalNewActor}
-        swipeDirection="down"
-        onSwipeComplete={() => setModalNewActor(false)}
-        onRequestClose={() => setModalNewActor(false)}
-        onBackdropPress={() => setModalNewActor(false)}
-        deviceWidth={deviceWidth}
-        style={{ width: "100%", marginLeft: 0, marginBottom: 0, justifyContent: "flex-end" }}
-      >
-        <View style={[styles.modalContainer, { height: vh(100) - 50, paddingBottom: 40 }]}>
-          <View
-            style={{
-              width: 40,
-              height: 4,
-              backgroundColor: Colors.white,
-              opacity: 0.3,
-              marginTop: 8,
-              marginBottom: 18,
-            }}
-          ></View>
-
-          <TouchableOpacity style={styles.modalBackBtn} onPress={() => setModalNewActor(false)}>
-            <Ionicons name="arrow-back" size={20} color={Colors.blue} />
-          </TouchableOpacity>
-
-          <Text.ModalTitle style={{ marginBottom: 25 }}>{"New Actor"}</Text.ModalTitle>
-
-          <View style={{ height: vh(90) - 150 }}>
-            <View style={[styles.catBtnContainer, { display: "flex", flexDirection: "row" }]}>
-              <View style={{ flex: 1, marginRight: 16 }}>
-                <Input value={""} placeholder={"Actor's Name"} />
               </View>
-              <TouchableOpacity
-                style={{
-                  width: 44,
-                  height: 44,
-                  borderRadius: 22,
-                  backgroundColor: Colors.btnBack,
-                  padding: 10,
-                }}
-              >
-                <Icon name="User" width={96} height={96} fill={"none"} />
-              </TouchableOpacity>
-            </View>
 
-            <View style={[styles.catBtnContainer, { display: "flex", flexDirection: "row" }]}>
-              <View style={{ flex: 1 }}>
-                <Input value={""} placeholder={"Hero's Name"} />
+              <View style={[styles.catBtnContainer, { display: "flex", flexDirection: "row" }]}>
+                <View style={{ flex: 1 }}>
+                  <Input value={heroName} onChangeText={(text) => setHeroName(text)} placeholder={"Hero's Name"} />
+                </View>
+              </View>
+
+              <View style={[styles.catBtnContainer, { display: "flex", flexDirection: "row" }]}>
+                <TextInput
+                  value={actorDescription}
+                  onChangeText={(text) => setActorDescription(text)}
+                  placeholder={"Ex killer, suffering after his daughter dies."}
+                  placeholderTextColor={Colors.white1}
+                  style={{
+                    color: "#fff",
+                    height: 160,
+                    backgroundColor: Colors.inputBack,
+                    padding: 16,
+                    borderRadius: 8,
+                    textAlignVertical: "top",
+                    width: "100%",
+                  }}
+                  numberOfLines={3}
+                  multiline={true}
+                />
               </View>
             </View>
 
-            <View style={[styles.catBtnContainer, { display: "flex", flexDirection: "row" }]}>
-              <TextInput
-                value=""
-                placeholder={"Ex killer, suffering after his daughter dies."}
-                placeholderTextColor={Colors.white1}
-                style={{
-                  height: 160,
-                  backgroundColor: Colors.inputBack,
-                  padding: 16,
-                  borderRadius: 8,
-                  textAlignVertical: "top",
-                  width: "100%",
-                }}
-                numberOfLines={3}
-                multiline={true}
-              />
-            </View>
+            <Button.Primary
+              onPress={() => saveNewActor()}
+              textType={"Primary"}
+              style={{ alignItems: "center" }}
+            >
+              <Text.TagTitle>{"Attach Selected"}</Text.TagTitle>
+            </Button.Primary>
           </View>
-
-          <Button.Primary
-            onPress={() => setModalNewActor(false)}
-            textType={"Primary"}
-            style={{ alignItems: "center" }}
-          >
-            <Text.TagTitle>{"Attach Selected"}</Text.TagTitle>
-          </Button.Primary>
-        </View>
+        </Modal>
       </Modal>
+
 
       {/* delActor Modal */}
       <Modal
@@ -927,10 +1062,10 @@ const SeriesNewScreen: NavStatelessComponent = () => {
           </TouchableOpacity>
           <Text.ModalTitle style={{ marginBottom: 25 }}>{"Tags"}</Text.ModalTitle>
           <View style={{ width: "100%" }}>
-            <Input value={""} placeholder={"Enter a tag"} />
+            <Input value={tagString} onChangeText={(text) => setTagString(text)} placeholder={"Enter a tag"} />
           </View>
           <Button.Primary
-            onPress={() => setModalTags(false)}
+            onPress={() => saveTags()}
             textType={"Primary"}
             style={{ alignItems: "center", marginTop: 16 }}
           >
@@ -971,61 +1106,36 @@ const SeriesNewScreen: NavStatelessComponent = () => {
             onChangeText={(search) => setSimilarSearch(search)}
             placeholderTextColor={Colors.white1}
           />
-          <FlatList
-             data={similarSeriesData}
-             keyExtractor={(item:any) => item._id}
-             showsHorizontalScrollIndicator={false}
-             renderItem={({item})=> {
-               return (
-                <View style={styles.similarMovie}>
-                <Image
-                  source={{uri: item.seriesPoster}}
-                  style={{ width: 80, height: 100, borderRadius: 16, marginRight: 16 }}
-                />
-                <View style={{ width:'70%'}}>
-                  <TouchableOpacity
-                    style={{ display: "flex", flexDirection: "row", marginBottom: 8 }}
-                    onPress={() => setModalSimilarDetail(true)}
-                  >
-                    <Text.ParagraphTitle >{item.seriesName}</Text.ParagraphTitle>
-                    <MaterialIcons
-                      name={"keyboard-arrow-right"}
-                      size={24}
-                      color={Colors.white}
-                      style={{ textAlignVertical: "center" }}
-                    />
-                  </TouchableOpacity>
-  
-                  {/* <Text.Tertiary>{movie.movieDesShort}</Text.Tertiary> */}
-                </View>
-              </View>
-               )
-             }}
-          />
-          {/* {filterSimilars(movies).map((movie, index) => (
-            <View key={index} style={styles.similarMovie}>
-              <Image
-                source={imagePath[movie.movieThumb]}
-                style={{ width: 80, height: 100, borderRadius: 16, marginRight: 16 }}
-              />
-              <View style={{ flex: 1 }}>
-                <TouchableOpacity
-                  style={{ display: "flex", flexDirection: "row", marginBottom: 8 }}
-                  onPress={() => setModalSimilarDetail(true)}
-                >
-                  <Text.ParagraphTitle style={{ flex: 1 }}>{movie.movieTitle}</Text.ParagraphTitle>
-                  <MaterialIcons
-                    name={"keyboard-arrow-right"}
-                    size={24}
-                    color={Colors.white}
-                    style={{ textAlignVertical: "center" }}
+          <ScrollView style={{ width: "100%" }}>
+            {similarSeriesData ? similarSeriesData.map((movie, index) => (
+              <TouchableOpacity onPress={() => {
+                saveSimilarSeries(movie.seriesName, movie.seriesPoster)
+              }}>
+                <View key={index} style={styles.similarMovie}>
+                  <Image
+                    source={{ uri: movie.seriesPoster }}
+                    style={{ width: 80, height: 100, borderRadius: 16, marginRight: 16 }}
                   />
-                </TouchableOpacity>
+                  <View style={{ flex: 1 }}>
+                    <TouchableOpacity
+                      style={{ display: "flex", flexDirection: "row", marginBottom: 8 }}
+                      onPress={() => setModalSimilarDetail(true)}
+                    >
+                      <Text.ParagraphTitle style={{ flex: 1 }}>{movie.seriesName}</Text.ParagraphTitle>
+                      <MaterialIcons
+                        name={"keyboard-arrow-right"}
+                        size={24}
+                        color={Colors.white}
+                        style={{ textAlignVertical: "center" }}
+                      />
+                    </TouchableOpacity>
 
-                <Text.Tertiary>{movie.movieDesShort}</Text.Tertiary>
-              </View>
-            </View>
-          ))} */}
+                    {/* <Text.Tertiary>{movie.movieDesShort}</Text.Tertiary> */}
+                  </View>
+                </View>
+              </TouchableOpacity>
+            )) : null}
+          </ScrollView>
         </View>
       </Modal>
 
@@ -1056,7 +1166,7 @@ const SeriesNewScreen: NavStatelessComponent = () => {
           </TouchableOpacity>
 
           <Text.ModalTitle style={{ marginBottom: 25 }}>{"Similar Movies"}</Text.ModalTitle>
-          
+
           <ScrollView style={{ width: "100%", paddingBottom: 40 }}>
             <View style={[styles.similarMovie, { borderBottomWidth: 0 }]}>
               <Image
@@ -1342,10 +1452,12 @@ const SeriesNewScreen: NavStatelessComponent = () => {
                 {"Inciting Incident"}
               </Text.ParagraphTitle>
               <TextInput
-                value=""
+                value={incident}
+                onChangeText={(text) => setIncident(text)}
                 placeholder={"Enter your text here"}
                 placeholderTextColor={Colors.white1}
                 style={{
+                  color: '#fff',
                   height: 120,
                   backgroundColor: Colors.inputBack,
                   padding: 16,
@@ -1361,10 +1473,12 @@ const SeriesNewScreen: NavStatelessComponent = () => {
                 {"Protagonist"}
               </Text.ParagraphTitle>
               <TextInput
-                value=""
+                value={protagonist}
+                onChangeText={(text) => setProtagonist(text)}
                 placeholder={"Enter your text here"}
                 placeholderTextColor={Colors.white1}
                 style={{
+                  color: '#fff',
                   height: 120,
                   backgroundColor: Colors.inputBack,
                   padding: 16,
@@ -1381,10 +1495,12 @@ const SeriesNewScreen: NavStatelessComponent = () => {
                 {"Action"}
               </Text.ParagraphTitle>
               <TextInput
-                value=""
+                value={action}
+                onChangeText={(text) => setAction(text)}
                 placeholder={"Enter your text here"}
                 placeholderTextColor={Colors.white1}
                 style={{
+                  color: '#fff',
                   height: 120,
                   backgroundColor: Colors.inputBack,
                   padding: 16,
@@ -1401,10 +1517,12 @@ const SeriesNewScreen: NavStatelessComponent = () => {
                 {"Antagonist"}
               </Text.ParagraphTitle>
               <TextInput
-                value=""
+                value={antagonist}
+                onChangeText={(text) => setAntagonist(text)}
                 placeholder={"Enter your text here"}
                 placeholderTextColor={Colors.white1}
                 style={{
+                  color: '#fff',
                   height: 120,
                   backgroundColor: Colors.inputBack,
                   padding: 16,
@@ -1417,7 +1535,7 @@ const SeriesNewScreen: NavStatelessComponent = () => {
             </View>
           </ScrollView>
           <Button.Primary
-            onPress={() => setModalSimilarDetail(false)}
+            onPress={() => saveLogline()}
             textType={"Primary"}
             style={{ alignItems: "center", marginTop: 20 }}
           >

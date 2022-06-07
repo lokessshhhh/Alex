@@ -1,4 +1,4 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import {
   ImageBackground,
   ScrollView,
@@ -15,12 +15,14 @@ import ToggleSwitch from "toggle-switch-react-native";
 import { color } from "@storybook/addon-knobs";
 import SwitchToggle from "react-native-switch-toggle";
 import { vw, vh } from "react-native-css-vh-vw";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 import { navigate } from "navigation";
 import { NavStatelessComponent } from "interfaces";
 import { Icon, Text, Input, Button } from "components";
 import { Colors, Font } from "style";
 
+import BaseURl from "constant/BaseURL";
 import imagePath from "../../constant/imagePath";
 import navigationOptions from "./BookListScreen.navigationOptions";
 import styles from "./BookListScreen.styles";
@@ -28,6 +30,8 @@ import styles from "./BookListScreen.styles";
 const SeriesListScreen: NavStatelessComponent = () => {
   const navigation = useNavigation();
   const navigator = navigate(navigation);
+  const [search, setSearch] = useState("");
+  const [bookData, setBookData] = useState([]);
 
   const movies = [
     {
@@ -80,8 +84,6 @@ const SeriesListScreen: NavStatelessComponent = () => {
     );
   };
 
-  const [search, setSearch] = React.useState("");
-
   //header scroll styling
   const scrollPosition = useRef(new Animated.Value(0)).current;
   const minHeaderHeight = 0;
@@ -115,6 +117,31 @@ const SeriesListScreen: NavStatelessComponent = () => {
     extrapolateLeft: "identity",
     extrapolateRight: "clamp",
   });
+
+  useEffect(() => {
+    bookDetails()
+  }, [])
+  //get book
+  const bookDetails = async () => {
+    const token = await AsyncStorage.getItem('authToken')
+
+    fetch(BaseURl + 'books/bookDetails', {
+      method: 'get',
+      headers: {
+        "Authorization": `Bearer ${token}`,
+      }
+    })
+      .then((response) => response.json())
+      .then((responseJson) => {
+        console.log(responseJson)
+        if (responseJson.code === 200) {
+          setBookData(responseJson.data)
+        }
+      })
+      .catch((error) => {
+        console.log(error)
+      })
+  }
 
   return (
     <ImageBackground source={imagePath["background"]} style={styles.imageBackground}>
@@ -161,20 +188,24 @@ const SeriesListScreen: NavStatelessComponent = () => {
             placeholderTextColor={Colors.white1}
           />
           <View style={styles.movieListContainer}>
-            {filterList(movies).map((listItem, index) => (
+            {/* {filterList(movies).map((listItem, index) => ( */}
+            {bookData.map((item, index) => (
               <TouchableOpacity
                 style={styles.movieItem}
                 key={index}
-                onPress={() => navigator.openBookDetail()}
+                onPress={() => navigator.openBookDetail(
+                  { id: item._id }
+                )}
               >
-                <Image source={imagePath[listItem.movieThumb]} style={styles.thumbImage} />
+                <Image source={{ uri: item.bookBanner }} style={styles.thumbImage} />
                 <Text.ModalTitle style={{ lineHeight: 24, fontWeight: "700" }}>
-                  {listItem.movieTitle}
+                  {item.title}
                 </Text.ModalTitle>
                 <Text.Tertiary
                   style={{ lineHeight: 24, fontWeight: "400", opacity: 0.8, textAlign: "center" }}
                 >
-                  {listItem.movieCategory}
+                  {item.genres.map(genre => Object.keys(genre)+', ')}
+                  {/* {Object.keys(item.genres).toString().substring(0, 22)} */}
                 </Text.Tertiary>
                 <LinearGradient
                   style={styles.movieRate}
@@ -182,7 +213,7 @@ const SeriesListScreen: NavStatelessComponent = () => {
                   start={{ x: 0.0, y: 0.0 }}
                   end={{ x: 1.0, y: 0.0 }}
                 >
-                  <Text.Primary>{listItem.movieRate}</Text.Primary>
+                  <Text.Primary>{'20'}</Text.Primary>
                   <Text.Primary
                     style={{
                       fontSize: 10,

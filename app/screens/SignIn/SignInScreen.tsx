@@ -100,7 +100,7 @@ const SignInScreen: NavStatelessComponent = () => {
   //   })
 
   const signInClick = async () => {
-    navigator.openMainPage()
+    // navigator.openMainPage()
     setLoading(true);
     const loginData = {
       email: email,

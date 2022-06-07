@@ -1,8 +1,10 @@
-import React from "react";
-import { ScrollView, View, Image, TouchableOpacity } from "react-native";
+import React, { useEffect, useState } from "react";
+import { ScrollView, View, Image, TouchableOpacity, ActivityIndicator } from "react-native";
 import { useNavigation, useRoute } from "@react-navigation/native";
 import { MaterialIcons, MaterialCommunityIcons, Feather, Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import axios from "axios";
 
 import { navigate } from "navigation";
 import { NavStatelessComponent } from "interfaces";
@@ -13,12 +15,22 @@ import imagesPath from "../../constant/imagePath";
 import navigationOptions from "./MovieDetailScreen.navigationOptions";
 import styles from "./MovieDetailScreen.styles";
 import imagePath from "../../constant/imagePath";
+import BaseURl from "constant/BaseURL";
 
 const MovieDetailScreen: NavStatelessComponent = () => {
   const navigation = useNavigation();
   const navigator = navigate(navigation);
   const route = useRoute();
+  const [movie, setMovie] = useState<any>([]);
+  const [spinner, setSpinner] = useState(false);
 
+  useEffect(() => {
+    getSignleMovie()
+  }, [])
+
+  useEffect(() => {
+    console.log("--------------Movie ", movie);
+  }, [movie])
   const genres = [
     { genre: "Comedy" },
     { genre: "Sci-Fi" },
@@ -41,7 +53,6 @@ const MovieDetailScreen: NavStatelessComponent = () => {
     { tag: "Action" },
     { tag: "Romance" },
   ];
-
   const smiliarMovies = [
     { title: "John Wick1", thumb: "similar1" },
     { title: "John Wick2", thumb: "similar2" },
@@ -50,16 +61,45 @@ const MovieDetailScreen: NavStatelessComponent = () => {
     { title: "Speed", thumb: "similar3" },
     { title: "Professional", thumb: "similar1" },
   ];
+
+
+  const getSignleMovie = async () => {
+    setSpinner(true)
+    const token = await AsyncStorage.getItem('authToken')
+
+    axios({
+      method: 'get',
+      url: BaseURl + 'movies/singleMovie/' + route.params.id,
+      headers: {
+        "Authorization": `Bearer ${token}`
+      },
+    })
+      .then((resposeJson) => {
+        console.log("response data: ", resposeJson.data);
+        if (resposeJson.data.code === 200) {
+          setMovie(resposeJson.data.data)
+          setSpinner(false)
+        }
+      })
+      .catch((err) => {
+        setSpinner(false)
+        console.log(err);
+      })
+  }
+
   return (
     <ScrollView style={{ backgroundColor: Colors.GradTop }}>
-      <Image source={imagesPath["movieThumb"]} style={styles.image} />
+      <Image source={movie.movieBanner ? { uri: movie.movieBanner } : imagesPath["movieThumb"]} style={styles.image} />
       <View style={styles.container}>
         <View style={styles.header}>
           <TouchableOpacity onPress={() => navigator.goBack()}>
             <MaterialIcons name="arrow-back" color={Colors.white} size={20} />
           </TouchableOpacity>
           <View style={styles.rightActions}>
-            <TouchableOpacity onPress={() => navigator.openEditMovie()}>
+            <TouchableOpacity onPress={() =>
+              navigator.openEditMovie(
+                { id: movie._id }
+              )}>
               <Icon
                 name="Edit_white"
                 width="20"
@@ -81,9 +121,11 @@ const MovieDetailScreen: NavStatelessComponent = () => {
               textAlignVertical: "center",
             }}
           >
-            {"John Wick Chapter 3"}
+            {movie.title}
           </Text.Primary>
-          <TouchableOpacity onPress={() => navigator.openMoviePlay()}>
+          <TouchableOpacity onPress={() => navigator.openMoviePlay(
+            { id: movie._id }
+          )}>
             <LinearGradient
               style={styles.screenPlay}
               colors={[Colors.GradLeft, Colors.GradRight]}
@@ -98,15 +140,13 @@ const MovieDetailScreen: NavStatelessComponent = () => {
           <View style={styles.contentItem}>
             <Text.TagTitle style={{ fontSize: 22, marginBottom: 8 }}>{"Logline"}</Text.TagTitle>
             <Text.Tertiary>
-              {
-                "John Wick is on the run after killing a member of the international assassins' guild, and with a $14 million price tag on his head, he is the target of hit men and women everywhere."
-              }
+              {movie.logline ? Object.values(movie.logline).toString().replaceAll(',', ' ') : ''}
             </Text.Tertiary>
           </View>
 
           <View style={styles.contentItem}>
             <Text.TagTitle style={{ fontSize: 22, marginBottom: 8 }}>{"Tagline"}</Text.TagTitle>
-            <Text.Tertiary>{"Don't Hunt What You Can't Kill."}</Text.Tertiary>
+            <Text.Tertiary>{movie.tagline}</Text.Tertiary>
           </View>
 
           <View style={styles.contentItem}>
@@ -114,13 +154,13 @@ const MovieDetailScreen: NavStatelessComponent = () => {
             <View style={styles.writers}>
               <View style={styles.writer}>
                 <Image
-                  source={imagePath["avatar"]}
+                  source={movie.author ? { uri: movie.author.profileImage } : imagePath["avatar"]}
                   style={{ width: 24, height: 24, borderRadius: 12 }}
                 />
                 <Text.Secondary
                   style={{ lineHeight: Font.FontLineHeight.Tertiary, marginHorizontal: 8 }}
                 >
-                  {"Julia Ellei"}
+                  {movie.author ? movie.author.name : ''}
                 </Text.Secondary>
               </View>
             </View>
@@ -129,9 +169,7 @@ const MovieDetailScreen: NavStatelessComponent = () => {
           <View style={styles.contentItem}>
             <Text.TagTitle style={{ fontSize: 22, marginBottom: 8 }}>{"Synopsis"}</Text.TagTitle>
             <Text.Tertiary>
-              {
-                "John runs through New York as time runs out on his 'grace period'. He tuns into an alley and sees the Tick-Tock Man, one of the Bowery King's spies. He gets into a taxi, but the roads are gridlocked.... Show More."
-              }
+              {movie.synopsis}
             </Text.Tertiary>
             <Text.Tertiary style={{ color: Colors.blue }}>{"Show more"}</Text.Tertiary>
           </View>
@@ -139,48 +177,48 @@ const MovieDetailScreen: NavStatelessComponent = () => {
           <View style={styles.contentItem}>
             <Text.TagTitle style={{ fontSize: 22, marginBottom: 8 }}>{"Genres"}</Text.TagTitle>
             <ScrollView style={styles.genres} horizontal={true}>
-              {genres.map((genre, index) => (
+              {movie.genres ? movie.genres.map((genre, index) => (
                 <View style={styles.genre} key={index}>
                   <Text.Primary
                     style={{ lineHeight: Font.FontLineHeight.Tertiary, marginHorizontal: 8 }}
                   >
-                    {genre.genre}
+                    {Object.keys(genre)}
                   </Text.Primary>
                 </View>
-              ))}
+              )) : null}
             </ScrollView>
           </View>
 
           <View style={styles.contentItem}>
             <Text.TagTitle style={{ fontSize: 22, marginBottom: 8 }}>{"Dream Cast"}</Text.TagTitle>
             <ScrollView style={styles.casts} horizontal={true}>
-              {dreamcasts.map((dreamcast, index) => (
+              {movie.actors ? movie.actors.map((dreamcast, index) => (
                 <View style={styles.cast} key={index}>
                   <Image
-                    source={imagePath[dreamcast.avatar]}
+                    source={dreamcast.actorImage ? { uri: dreamcast.actorImage } : imagePath[dreamcast.avatar]}
                     style={{ width: 80, height: 80, borderRadius: 40 }}
                   />
                   <Text.Primary style={{ textAlign: "center", marginTop: 10 }}>
-                    {dreamcast.castName}
+                    {dreamcast.actorName}
                   </Text.Primary>
-                  <Text.Primary style={styles.castName}>{dreamcast.realName}</Text.Primary>
+                  <Text.Primary style={styles.castName}>{dreamcast.heroName}</Text.Primary>
                 </View>
-              ))}
+              )) : null}
             </ScrollView>
           </View>
 
           <View style={styles.contentItem}>
             <Text.TagTitle style={{ fontSize: 22, marginBottom: 8 }}>{"Tags"}</Text.TagTitle>
             <ScrollView style={styles.genres} horizontal={true}>
-              {tags.map((tag, index) => (
+              {movie.tags ? movie.tags.map((tag, index) => (
                 <View style={styles.genre} key={index}>
                   <Text.Primary
                     style={{ lineHeight: Font.FontLineHeight.Tertiary, marginHorizontal: 8 }}
                   >
-                    {tag.tag}
+                    {tag}
                   </Text.Primary>
                 </View>
-              ))}
+              )) : null}
             </ScrollView>
           </View>
 
@@ -189,17 +227,17 @@ const MovieDetailScreen: NavStatelessComponent = () => {
               {"Similar Movies"}
             </Text.TagTitle>
             <ScrollView style={styles.casts} horizontal={true}>
-              {smiliarMovies.map((similarMovie, index) => (
+              {movie.similarMovies ? movie.similarMovies.map((similarMovie, index) => (
                 <View style={[styles.cast, { marginTop: 6 }]} key={index}>
                   <Image
-                    source={imagePath[similarMovie.thumb]}
+                    source={similarMovie.moviePoster ? { uri: similarMovie.moviePoster } : imagePath[similarMovie.thumb]}
                     style={{ width: 80, height: 100, borderRadius: 16 }}
                   />
                   <Text.Primary style={{ textAlign: "center", marginTop: 10 }}>
-                    {similarMovie.title}
+                    {similarMovie.movieName}
                   </Text.Primary>
                 </View>
-              ))}
+              )) : null}
             </ScrollView>
           </View>
         </View>

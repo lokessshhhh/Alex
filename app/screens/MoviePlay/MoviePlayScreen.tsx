@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { ScrollView, View, Image, TouchableOpacity, TextInput, Dimensions } from "react-native";
 import Modal from "react-native-modal";
 import { useNavigation, useRoute } from "@react-navigation/native";
@@ -29,6 +29,12 @@ const MoviePlayScreen: NavStatelessComponent = () => {
   const navigator = navigate(navigation);
   const route = useRoute();
   const deviceWidth = Dimensions.get("window").width;
+
+  useEffect(() => {
+    console.log("==============", route);
+
+  }, [])
+
   return (
     <View style={{ backgroundColor: Colors.GradTop }}>
       <View style={styles.container}>
@@ -87,7 +93,9 @@ const MoviePlayScreen: NavStatelessComponent = () => {
         </View>
         <TouchableOpacity
           style={styles.navigationBtn}
-          onPress={() => navigator.openMovieActScreen()}
+          onPress={() => navigator.openMovieActScreen(
+            { id: route.params.id }
+          )}
         >
           <View style={styles.buttonContainer}>
             <Text.Primary>{"Act 1"}</Text.Primary>

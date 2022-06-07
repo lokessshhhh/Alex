@@ -22,21 +22,18 @@ import {
 import { LinearGradient } from "expo-linear-gradient";
 import { vw, vh } from "react-native-css-vh-vw";
 import { Snackbar } from "react-native-paper";
-
+import * as ImagePicker from "expo-image-picker";
 import { navigate } from "navigation";
 import { NavStatelessComponent } from "interfaces";
 import { Icon, Text, Input, Button } from "components";
 import { Colors, Font } from "style";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import axios from "axios";
+
 import imagesPath from "../../constant/imagePath";
 import navigationOptions from "./MovieNewScreen.navigationOptions";
 import styles from "./MovieNewScreen.styles";
 import imagePath from "../../constant/imagePath";
-import { white } from "react-native-paper/lib/typescript/styles/colors";
 import BaseURl from "constant/BaseURL";
-import * as ImagePicker from "expo-image-picker";
-
 
 const MovieNewScreen: NavStatelessComponent = () => {
   const navigation = useNavigation();
@@ -56,23 +53,34 @@ const MovieNewScreen: NavStatelessComponent = () => {
   const [modalLogline, setModalLogline] = React.useState(false);
   const [modalLoglineInfo, setModalLoglineInfo] = React.useState(false);
   const [loglineData, setLoglineData] = React.useState<any>();
-  const [genreData, setGenreData] = React.useState<any>();
-  const [genre, setGenre] = React.useState('');
-  const [genreArray, setGenreArray] = React.useState<any>();
   const [movieData, setMovieData] = React.useState<any>();
   //ImagePicker
   const [image, setImage] = React.useState<any>();
+  const [allMovies, setAllMovies] = React.useState([]);
+  const [similarMovies, setSimilarMovies] = React.useState([]);
   //logline
   const [incident, setIncident] = React.useState("");
   const [protagonist, setProtagonist] = React.useState("");
   const [action, setAction] = React.useState("");
   const [antagonist, setAntagonist] = React.useState("");
+  const [logLine, setLogLine] = React.useState("");
+  //genre
+  const [genreData, setGenreData] = React.useState([]);
+  const [genreNumber, setGenreNumber] = React.useState(new Array(13).fill(0));
+  const [subGenre, setSubGenre] = React.useState([]);
+  const [selectedSubGenre, setSelectedSubGenre] = React.useState([]);
+  const [genreIndex, setGenreIndex] = React.useState([]);
+  const [allGenre, setAllGenre] = React.useState([]);
+  const [singleGenre, setSingleGenre] = React.useState<any>();
   //New Actor
   const [actorName, setActorName] = React.useState("");
   const [heroName, setHeroName] = React.useState("");
   const [actorDescription, setActorDescription] = React.useState("");
-  const [actorData, setActorData] = React.useState<any>();
+  const [actorData, setActorData] = React.useState([]);
   const [actorDataList, setActorDataList] = React.useState<any>();
+  const [actorImage, setActorImage] = React.useState("");
+  const [actorIndex, setActorIndex] = React.useState([]);
+  const [selectedActor, setSelectedActor] = React.useState([]);
   //tag
   const [tags, setTags] = React.useState([]);
   const [tagString, setTagString] = React.useState("");
@@ -86,37 +94,7 @@ const MovieNewScreen: NavStatelessComponent = () => {
   //search states
   const [similarSearch, setSimilarSearch] = React.useState("");
   const [movieBanner, setMovieBanner] = React.useState("");
-  const [type, settype] = React.useState("");
-
-  useEffect(() => {
-    movieDetails()
-  },[])
-
-  const filterSimilars = (list) => {
-    return list.filter((listItem) =>
-      listItem.movieTitle.toLowerCase().includes(similarSearch.toLowerCase())
-    );
-  };
-
-  const DATA = [
-    {
-
-      name: 'Keano Reeves',
-      subName: 'Hero: Jhone Wick',
-      title: 'First Item',
-    },
-    {
-      name: 'Laetitia Casta',
-      subName: 'Hero: Jessica Jones',
-      title: 'First Item',
-    },
-    {
-      name: 'Laetitia Casta',
-      subName: 'Hero: Not indicated',
-      title: 'First Item',
-    },
-  ];
-
+  const [type, settype] = React.useState("Movie");
 
   //Similar Movies
   const movies = [
@@ -163,58 +141,224 @@ const MovieNewScreen: NavStatelessComponent = () => {
       movieThumb: "thumb8",
     },
   ];
-
   //Genres
   const genreModalList = [
-    { name: "Comedy", image: "genre_comedy", number: 7 },
-    { name: "Horror", image: "genre_horror", number: 0 },
-    { name: "Thriller", image: "genre_thriller", number: 0 },
-    { name: "Romance", image: "genre_romance", number: 0 },
-    { name: "Action", image: "genre_action", number: 10 },
-    { name: "Drama", image: "genre_drama", number: 0 },
-    { name: "Mystery", image: "genre_mystery", number: 0 },
-    { name: "Fantasy", image: "genre_fantasy", number: 0 },
-    { name: "Adventure", image: "genre_adventure", number: 0 },
-    { name: "Crime", image: "genre_crime", number: 2 },
-    { name: "Animation", image: "genre_animation", number: 0 },
-    { name: "Biography", image: "genre_biography", number: 0 },
-    { name: "History", image: "genre_history", number: 0 },
-    { name: "Family", image: "genre_family", number: 0 },
-    { name: "Sci-FI", image: "genre_sci", number: 5 },
+    {
+      name: "Action",
+      image: "genre_action",
+      number: 0,
+      subGenre: [
+        "Heroic Bloodshed",
+        "Military Action",
+        "Espionage",
+        "Wuxia Action",
+        "Disaster",
+        "Adventure"
+      ]
+    },
+    {
+      name: "Animation",
+      image: "genre_animation",
+      number: 0,
+      subGenre: [
+        "Traditional",
+        "Stop Motion",
+        "Claymation",
+        "Cutout",
+        "Computer Generated Imagery",
+        "Puppetry",
+        "Live-Action"
+      ]
+    },
+    {
+      name: "Comedy",
+      image: "genre_comedy",
+      number: 0,
+      subGenre: [
+        "Action-Comedy",
+        "Dark Comedy (Black Comedy)",
+        "Romantic Comedy",
+        "Buddy Comedy",
+        "Road Comedy",
+        "Slapstick Comedy",
+        "Parody",
+        "Spoof",
+        "Satire",
+        "Sitcom",
+        "Sketch Comedy",
+        "Mockumentary",
+        "Prank"
+      ]
+    },
+    {
+      name: "Crime",
+      image: "genre_crime",
+      number: 0,
+      subGenre: [
+        "Caper",
+        "Heist",
+        "Gangster",
+        "Cop (Police)",
+        "Detective",
+        "Courtroom",
+        "Procedural"
+      ]
+    },
+    {
+      name: "Drama",
+      image: "genre_drama",
+      number: 0,
+      subGenre: [
+        "Melodrama",
+        "Teen Drama",
+        "Philosophical Drama",
+        "Medical Drama",
+        "Legal Drama",
+        "Political Drama",
+        "Anthropological Drama",
+        "Religious Drama",
+        "Docudrama"
+      ]
+    },
+    {
+      name: "Experimental",
+      image: "genre_drama",
+      number: 0,
+      subGenre: [
+        "Surrealist",
+        "Absurdist"
+      ]
+    },
+    {
+      name: "Fantasy",
+      image: "genre_fantasy",
+      number: 0,
+      subGenre: [
+        "Contemporary Fantasy",
+        "Urban Fantasy",
+        "Dark Fantasy",
+        "High Fantasy",
+        "Myth"
+      ]
+    },
+    {
+      name: "Historical",
+      image: "genre_fantasy",
+      number: 0,
+      subGenre: [
+        "Historical Event",
+        "Biography",
+        "Historical Epic",
+        "Historical Fiction",
+        "Period Piece",
+        "Alternate History"
+      ]
+    },
+    {
+      name: "Horror",
+      image: "genre_horror",
+      number: 0,
+      subGenre: [
+        "Horror Genre",
+        "Ghost",
+        "Monster",
+        "Werewolf",
+        "Vampire",
+        "Occult",
+        "Slasher",
+        "Splatter",
+        "Found Footage",
+        "Zombie"
+      ]
+    },
+    {
+      name: "Romance",
+      image: "genre_romance",
+      number: 0,
+      subGenre: [
+        "Romance Drama",
+        "Romance Thriller",
+        "Period Romance"
+      ]
+    },
+    {
+      name: "Science Fiction",
+      image: "genre_romance",
+      number: 0,
+      subGenre: [
+        "Post-Apocalyptic",
+        "Utopian",
+        "Dystopian",
+        "Cyberpunk",
+        "Steampunk",
+        "Tech Noir",
+        "Space Opera",
+        "Contemporary",
+        "Military"
+      ]
+    },
+    {
+      name: "Thriller",
+      image: "genre_thriller",
+      number: 0,
+      subGenre: [
+        "Psychological",
+        "Mystery",
+        "Techno",
+        "Film Noir"
+      ]
+    },
+    {
+      name: "Western",
+      image: "genre_thriller",
+      number: 0,
+      subGenre: [
+        "Epic Western",
+        "Empire Western",
+        "Marshal Western",
+        "Outlaw Western",
+        "Revenge Western",
+        "Revisionist Western",
+        "Spaghetti Western"
+      ]
+    },
   ];
+  useEffect(() => {
+    console.log("Routes......", route)
+    movieDetails()
+  }, [])
 
-  //save movie
+  const filterSimilars = (list) => {
+    return list.filter((listItem) =>
+      listItem.movieTitle.toLowerCase().includes(similarSearch.toLowerCase())
+    );
+  };
+
   const saveSimilarMovie = (name: any, poster: any) => {
     let movie = []
-    movie.push({ "moviePoster": "http://localhost:8000/Profile-Images/1653633652820.jpg", "movieName": name })
-    let data = { "similarMovies": movie }
-    // data.push({ "moviePoster": poster, "movieName": name })
+    movie.push({ moviePoster: poster, movieName: name })
+    let data = { similarMovies: movie }
     console.log(data)
     setMovieData(data)
     setModalSimilarMovies(false)
   }
-  //savelogline
+ 
   const saveLogline = () => {
     const logline = { logline: { incitingIncident: incident, protagonist: protagonist, Action: action, antagonist: antagonist } }
-    // logline.push({ incitingIncident: incident, protagonist: protagonist, Action: action, antagonist: antagonist })
     setModalLogline(false)
     console.log("-------Logline-------", logline)
     setLoglineData(logline)
-  }
-
-  //save paticular actor
-  const saveActor = () => {
-    setModalCast(false)
-    let data = { "actors": actorData }
-    console.log(data)
-    setActorDataList(data)
+    setLogLine(incident + ' ' + protagonist + ' ' + action + ' ' + antagonist)
   }
 
   // save movie, book and series details
   const saveMovieDetails = async () => {
     const token = await AsyncStorage.getItem('authToken')
+
     const uriPart = movieBanner.split('.');
     const fileExtension = uriPart[uriPart.length - 1];
+    const genres = { genres: genreData }
+
     let formData = new FormData()
     formData.append('type', type)
     formData.append(type === "Movie"
@@ -228,7 +372,7 @@ const MovieNewScreen: NavStatelessComponent = () => {
     formData.append('title', title)
     formData.append('synopsis', synopsis)
     formData.append('logline', JSON.stringify(loglineData))
-    formData.append('genres', JSON.stringify(genreData))
+    formData.append('genres', JSON.stringify(genres))
     formData.append('tagline', tagline)
     formData.append('tags', JSON.stringify(tagArray))
     formData.append('actors', JSON.stringify(actorDataList))
@@ -240,7 +384,6 @@ const MovieNewScreen: NavStatelessComponent = () => {
 
     console.log("formData", formData);
 
-    alert(type)
     if (type === "Movie") {
       fetch(BaseURl + 'movies/basicDetails', {
         method: 'post',
@@ -302,18 +445,31 @@ const MovieNewScreen: NavStatelessComponent = () => {
   //get movie, book and series details
   const movieDetails = async () => {
     const token = await AsyncStorage.getItem('authToken')
-
     fetch(BaseURl + 'movies/movieDetails', {
       method: 'get',
       headers: {
         "Authorization": `Bearer ${token}`,
       }
     })
-    .then((response) => response.json())
+      .then((response) => response.json())
       .then((responseJson) => {
-        console.log(responseJson)
+        console.log("Existing Actors: ", responseJson.data)
+        let data = []
+        let movies = []
         if (responseJson.code === 200) {
-          setActorData(responseJson.data.actors)
+          setAllMovies(responseJson.data)
+          responseJson.data.map(item => {
+            item.actors.map(actor => {
+              data.push(actor)
+              if (actorData.length === 0) { setActorData(data) }
+              else { setActorData(prevState => [...prevState, actor]) }
+            })
+            item.similarMovies.map(movie => {
+              console.log("------------", movie)
+              movies.push(movie)
+            })
+          })
+          setSimilarMovies(movies)
         }
       })
       .catch((error) => {
@@ -349,10 +505,13 @@ const MovieNewScreen: NavStatelessComponent = () => {
           let data = []
           alert(responseJson.message)
           data.push(responseJson.data)
-          setActorData(data)
+          console.log("=====================", actorData)
+          if (actorData.length === 0) { setActorData(data) }
+          else { setActorData(prevState => [...prevState, responseJson.data]) }
           setActorName("")
           setActorDescription("")
           setHeroName("")
+          setImage("")
           setModalNewActor(false)
         } else {
           alert(responseJson.message)
@@ -388,21 +547,61 @@ const MovieNewScreen: NavStatelessComponent = () => {
   }
 
   //save genre
-  const saveGenreData = () => {
-    let data = []
-    data.push("Alien Invasion")
-    let genData = { comedy: data }
-    console.log(genre);
-
-    setGenreArray(genData)
+  const saveGenreData = (item, index) => {
+    if (genreIndex.length > 0) {
+      if (genreIndex.includes(index)) {
+        let removeIndex = genreIndex.filter((i) => i !== index)
+        let remove = selectedSubGenre.filter((i) => i !== item)
+        setGenreIndex(removeIndex)
+        setSelectedSubGenre(remove)
+      } else {
+        setGenreIndex((prevState: any) => [...prevState, index])
+        setSelectedSubGenre((prevState: any) => [...prevState, item])
+      }
+    } else {
+      setGenreIndex((prevState: any) => [...prevState, index])
+      setSelectedSubGenre((prevState: any) => [...prevState, item])
+    }
   }
 
-  const saveGenreObject = () => {
-    let data = { genres: genreArray }
-    // data.push({ genre: genreArray })
-    console.log(data)
-    setGenreData(data)
-    setModalGenre(false)
+  const selectActors = (item, index) => {
+    if (actorIndex.length > 0) {
+      if (actorIndex.includes(index)) {
+        let removeIndex = actorIndex.filter((i) => i !== index)
+        let remove = selectedActor.filter((i) => i.actorId !== item.actorId)
+        console.log(remove)
+        setActorIndex(removeIndex)
+        setSelectedActor(remove)
+      } else {
+        setActorIndex((prevState: any) => [...prevState, index])
+        setSelectedActor((prevState: any) => [...prevState, item])
+      }
+    } else {
+      setActorIndex((prevState: any) => [...prevState, index])
+      setSelectedActor((prevState: any) => [...prevState, item])
+    }
+  }
+
+  const saveGeneres = () => {
+    const index = genreModalList.findIndex(object => {
+      return object.name === singleGenre.name;
+    });
+    console.log(index,genreNumber.length, genreNumber);
+    genreNumber.findIndex(i => {
+      if(index === i) {
+        i=selectedSubGenre.length
+      }
+    })
+    let data = {}
+    let allGenre = []
+    data[singleGenre.name] = selectedSubGenre
+    console.log(data, '======---------', selectedSubGenre.length);
+    allGenre.push(data)
+    if (genreData.length === 0) { setGenreData(allGenre) }
+    else { setGenreData(prevState => [...prevState, data]) }
+    setModalGenreDetail(false)
+    setGenreIndex([])
+    setSelectedSubGenre([])
   }
 
   //savetag
@@ -410,12 +609,10 @@ const MovieNewScreen: NavStatelessComponent = () => {
     setModalTags(false)
     let data = { "tags": tags }
     tags.push(tagString)
-    // data.push({ "tags": tags })
     console.log("-------Tags-------", data)
     setTagArray(data)
     setTagString('')
   }
-
 
   const saveProject = () => {
     setSnackBarVisible(true);
@@ -456,20 +653,14 @@ const MovieNewScreen: NavStatelessComponent = () => {
 
   //ImagePicker
   const pickImage = async () => {
-    // No permissions request is necessary for launching the image library
     let result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.All,
       allowsEditing: true,
       aspect: [4, 3],
       quality: 1,
     });
-
     console.log(result);
     setImage(result.uri);
-    // if (!result.cancelled) {
-    //   console.log("result Failed", result.uri)
-    //   
-    // }
   };
 
   const pickMovieBanner = async () => {
@@ -550,10 +741,11 @@ const MovieNewScreen: NavStatelessComponent = () => {
             <View style={styles.contentItem}>
               <Text.ParagraphTitle style={{ marginBottom: 8 }}>{"Logline"}</Text.ParagraphTitle>
               <TextInput
-                value=""
+                value={logLine}
                 placeholder={"Describe your question"}
                 placeholderTextColor={Colors.white1}
                 style={{
+                  color: '#fff',
                   height: 80,
                   backgroundColor: Colors.inputBack,
                   padding: 16,
@@ -627,8 +819,6 @@ const MovieNewScreen: NavStatelessComponent = () => {
 
             <View style={{ marginTop: 20 }}>
               {/* taagg */}
-
-
               <Text.TagTitle style={{ fontSize: 22, marginBottom: 7 }}>{"Tags"}</Text.TagTitle>
               <FlatList
                 data={tags}
@@ -641,7 +831,6 @@ const MovieNewScreen: NavStatelessComponent = () => {
                       paddingVertical: 8,
                       backgroundColor: "rgba(29, 174, 255, 0.15)",
                       borderRadius: 20,
-                      color: Colors.blue,
                       alignItems: 'center',
                       bottom: 2
                     }} >
@@ -808,8 +997,9 @@ const MovieNewScreen: NavStatelessComponent = () => {
                 <TouchableOpacity
                   style={styles.genreBtnContainer}
                   onPress={() => {
-                    console.log(index)
-                    setGenre(genre.name)
+                    let data = { name: genre.name, image: genre.image }
+                    setSingleGenre(data)
+                    setSubGenre(genre.subGenre)
                     setModalGenreDetail(true)
                   }}
                   key={index}
@@ -821,9 +1011,9 @@ const MovieNewScreen: NavStatelessComponent = () => {
                         {genre.name}
                       </Text.Primary>
                     </View>
-                    {genre.number > 0 ? (
+                    {genreNumber[index] > 0 ? (
                       <View style={styles.genreBadge}>
-                        <Text.Primary>{genre.number}</Text.Primary>
+                        <Text.Primary>{genreNumber[index]}</Text.Primary>
                       </View>
                     ) : null}
                   </View>
@@ -833,7 +1023,10 @@ const MovieNewScreen: NavStatelessComponent = () => {
           </ScrollView>
 
           <Button.Primary
-            onPress={() => saveGenreObject()}
+            onPress={() => {
+              setModalGenre(false)
+              console.log("---------------------", genreData)
+          }}
             textType={"Primary"}
             style={{ alignItems: "center" }}
           >
@@ -863,158 +1056,27 @@ const MovieNewScreen: NavStatelessComponent = () => {
               <Ionicons name="arrow-back" size={20} color={Colors.blue} />
             </TouchableOpacity>
             <View style={{ display: "flex", flexDirection: "row" }}>
-              <Image source={imagePath["genre_sci"]} style={{ width: 24, height: 24 }} />
+              <Image source={singleGenre ? imagePath[singleGenre.image] : null} style={{ width: 24, height: 24 }} />
               <Text.ModalTitle style={{ marginBottom: 25, marginLeft: 6 }}>
-                {"Sci-Fi"}
+                {singleGenre ? singleGenre.name : null}
               </Text.ModalTitle>
             </View>
             <ScrollView style={{ width: "100%" }}>
-              <TouchableOpacity
-                style={styles.catBtnContainer}
-                onPress={() => setModalGenreDetail(false)}
-              >
-                <View style={styles.catBtnText}>
-                  <Text.Primary>{"Alternative History"}</Text.Primary>
-                </View>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={styles.catBtnContainer}
-                onPress={() => {
-                  saveGenreData()
-                  setModalGenreDetail(false)
-                }}
-              >
-                <View
-                  style={[
-                    styles.catBtnText,
-                    { borderColor: Colors.btnBack, borderWidth: 1, backgroundColor: "rgba(0,0,0,0)" },
-                  ]}
-                >
-                  <Text.Primary>{"Alien Invasion"}</Text.Primary>
-                </View>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={styles.catBtnContainer}
-                onPress={() => setModalGenreDetail(false)}
-              >
-                <View
-                  style={[
-                    styles.catBtnText,
-                    { borderColor: Colors.btnBack, borderWidth: 1, backgroundColor: "rgba(0,0,0,0)" },
-                  ]}
-                >
-                  <Text.Primary>{"Alien Invasion"}</Text.Primary>
-                </View>
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                style={styles.catBtnContainer}
-                onPress={() => setModalGenreDetail(false)}
-              >
-                <View style={styles.catBtnText}>
-                  <Text.Primary>{"Alternative History"}</Text.Primary>
-                </View>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={styles.catBtnContainer}
-                onPress={() => setModalGenreDetail(false)}
-              >
-                <View
-                  style={[
-                    styles.catBtnText,
-                    { borderColor: Colors.btnBack, borderWidth: 1, backgroundColor: "rgba(0,0,0,0)" },
-                  ]}
-                >
-                  <Text.Primary>{"Alien Invasion"}</Text.Primary>
-                </View>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={styles.catBtnContainer}
-                onPress={() => setModalGenreDetail(false)}
-              >
-                <View
-                  style={[
-                    styles.catBtnText,
-                    { borderColor: Colors.btnBack, borderWidth: 1, backgroundColor: "rgba(0,0,0,0)" },
-                  ]}
-                >
-                  <Text.Primary>{"Alien Invasion"}</Text.Primary>
-                </View>
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                style={styles.catBtnContainer}
-                onPress={() => setModalGenreDetail(false)}
-              >
-                <View style={styles.catBtnText}>
-                  <Text.Primary>{"Alternative History"}</Text.Primary>
-                </View>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={styles.catBtnContainer}
-                onPress={() => setModalGenreDetail(false)}
-              >
-                <View
-                  style={[
-                    styles.catBtnText,
-                    { borderColor: Colors.btnBack, borderWidth: 1, backgroundColor: "rgba(0,0,0,0)" },
-                  ]}
-                >
-                  <Text.Primary>{"Alien Invasion"}</Text.Primary>
-                </View>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={styles.catBtnContainer}
-                onPress={() => setModalGenreDetail(false)}
-              >
-                <View
-                  style={[
-                    styles.catBtnText,
-                    { borderColor: Colors.btnBack, borderWidth: 1, backgroundColor: "rgba(0,0,0,0)" },
-                  ]}
-                >
-                  <Text.Primary>{"Alien Invasion"}</Text.Primary>
-                </View>
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                style={styles.catBtnContainer}
-                onPress={() => setModalGenreDetail(false)}
-              >
-                <View style={styles.catBtnText}>
-                  <Text.Primary>{"Alternative History"}</Text.Primary>
-                </View>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={styles.catBtnContainer}
-                onPress={() => setModalGenreDetail(false)}
-              >
-                <View
-                  style={[
-                    styles.catBtnText,
-                    { borderColor: Colors.btnBack, borderWidth: 1, backgroundColor: "rgba(0,0,0,0)" },
-                  ]}
-                >
-                  <Text.Primary>{"Alien Invasion"}</Text.Primary>
-                </View>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={styles.catBtnContainer}
-                onPress={() => setModalGenreDetail(false)}
-              >
-                <View
-                  style={[
-                    styles.catBtnText,
-                    { borderColor: Colors.btnBack, borderWidth: 1, backgroundColor: "rgba(0,0,0,0)" },
-                  ]}
-                >
-                  <Text.Primary>{"Alien Invasion"}</Text.Primary>
-                </View>
-              </TouchableOpacity>
+              {subGenre.map((item, index) => (
+                <TouchableOpacity
+                  key={index}
+                  style={styles.catBtnContainer}
+                  onPress={() => saveGenreData(item, index)}>
+                  <View style={styles.catBtnText}>
+                    <Text.Primary>{item}</Text.Primary>
+                    {genreIndex.map((i) => i === index ? <Image source={imagePath["check"]} style={{ width: 24, height: 24 }} /> : null)}
+                  </View>
+                </TouchableOpacity>
+              ))}
             </ScrollView>
             <TouchableOpacity
               style={{ width: "100%", marginTop: 20 }}
-              onPress={() => setModalGenreDetail(false)}
+              onPress={() => saveGeneres()}
             >
               <View
                 style={{
@@ -1024,7 +1086,7 @@ const MovieNewScreen: NavStatelessComponent = () => {
                   borderRadius: 24,
                 }}
               >
-                <Text.TagTitle style={{ alignSelf: "center" }}>{"Back"}</Text.TagTitle>
+                <Text.TagTitle style={{ alignSelf: "center" }}>{"Save"}</Text.TagTitle>
               </View>
             </TouchableOpacity>
           </View>
@@ -1061,108 +1123,47 @@ const MovieNewScreen: NavStatelessComponent = () => {
           <TouchableOpacity style={styles.modalAddBtn} onPress={() => setModalNewActor(true)}>
             <AntDesign name="plus" size={20} color={Colors.blue} />
           </TouchableOpacity>
-
-          {/* <ScrollView> */}
-
-          <FlatList
-            data={actorData}
-            renderItem={
-              ({ item }) => {
-                return (
-                  <View style={[styles.catBtnContainer, { display: "flex", flexDirection: "row" }]}>
-                    <ScrollView horizontal={true}>
-                      <TouchableOpacity style={styles.castInfo}>
-                        <Image
-                          source={imagePath["avatar3"]}
-                          style={{ width: 64, height: 64, borderRadius: 32, marginRight: 16 }}
-                        />
-                        <View style={{ display: "flex", flexDirection: "column" }}>
-                          <Text.ParagraphTitle style={{ marginBottom: 8, fontWeight: "700" }}>
-                            {item.actorName}
-                          </Text.ParagraphTitle>
-                          <Text.Tertiary>{item.heroName}</Text.Tertiary>
-                        </View>
-                      </TouchableOpacity>
-                      <View style={{ display: "flex", flexDirection: "row" }}>
-                        <TouchableOpacity onPress={() => setModalNewActor(true)}>
-                          <View style={styles.editCastBtn}>
-                            <Icon name="Edit_white" width="24" height="24" fill="none" />
-                          </View>
-                        </TouchableOpacity>
-
-                        <TouchableOpacity onPress={() => deleteActor(item.actorName, item._id)}>
-                          <View style={[styles.editCastBtn, { backgroundColor: "rgba(255, 69, 58, 1)" }]}>
-                            <Feather name="trash-2" size={24} color={Colors.white} />
-                          </View>
-                        </TouchableOpacity>
+          <ScrollView>
+            {actorData ? actorData.map((item, index) => (
+              <View style={[styles.catBtnContainer, { display: "flex", flexDirection: "row" }]} key={index}>
+                <ScrollView horizontal={true} >
+                  <TouchableOpacity style={styles.castInfo} onPress={() => selectActors(item, index)}>
+                    <Image
+                      source={{ uri: item.actorImage }}
+                      style={{ width: 64, height: 64, borderRadius: 32, marginRight: 16 }}
+                    />
+                    <View style={{ display: "flex", flexDirection: "column" }}>
+                      <Text.ParagraphTitle style={{ marginBottom: 8, fontWeight: "700" }}>
+                        {item.actorName}
+                      </Text.ParagraphTitle>
+                      <Text.Tertiary>{`Hero: ${item.heroName}`}</Text.Tertiary>
+                    </View>
+                    {actorIndex.map((i) => i === index ? <Image source={imagePath["check"]} style={{ width: 24, height: 24, marginLeft: 20 }} /> : null)}
+                  </TouchableOpacity>
+                  <View style={{ display: "flex", flexDirection: "row" }}>
+                    <TouchableOpacity onPress={() => setModalNewActor(true)}>
+                      <View style={styles.editCastBtn}>
+                        <Icon name="Edit_white" width="24" height="24" fill="none" />
                       </View>
-                    </ScrollView>
+                    </TouchableOpacity>
+                    <TouchableOpacity onPress={() => setModalDelActor(true)}>
+                      <View style={[styles.editCastBtn, { backgroundColor: "rgba(255, 69, 58, 1)" }]}>
+                        <Feather name="trash-2" size={24} color={Colors.white} />
+                      </View>
+                    </TouchableOpacity>
                   </View>
-                )
-              }
-            }
-          />
-
-
-          {/* <View style={[styles.catBtnContainer, { display: "flex", flexDirection: "row" }]}>
-              <ScrollView horizontal={true}>
-                <View style={styles.castInfo}>
-                  <Image
-                    source={imagePath["avatar2"]}
-                    style={{ width: 64, height: 64, borderRadius: 32, marginRight: 16 }}
-                  />
-                  <View>
-                    <Text.ParagraphTitle style={{ marginBottom: 8, fontWeight: "700" }}>
-                      {"Laetitia Casta"}
-                    </Text.ParagraphTitle>
-                    <Text.Tertiary>{"Hero: Jessica Jones"}</Text.Tertiary>
-                  </View>
-                </View>
-                <View style={{ display: "flex", flexDirection: "row" }}>
-                  <TouchableOpacity onPress={() => setModalNewActor(true)}>
-                    <View style={styles.editCastBtn}>
-                      <Icon name="Edit_white" width="24" height="24" fill="none" />
-                    </View>
-                  </TouchableOpacity>
-
-                  <TouchableOpacity onPress={() => setModalDelActor(true)}>
-                    <View style={[styles.editCastBtn, { backgroundColor: "rgba(255, 69, 58, 1)" }]}>
-                      <Feather name="trash-2" size={24} color={Colors.white} />
-                    </View>
-                  </TouchableOpacity>
-                </View>
-              </ScrollView>
-            </View>
-
-            <View style={[styles.catBtnContainer, { display: "flex", flexDirection: "row" }]}>
-              <View
-                style={[
-                  styles.castInfo,
-                  {
-                    backgroundColor: Colors.transparent,
-                    borderColor: Colors.btnBack,
-                    borderWidth: 1,
-                  },
-                ]}
-              >
-                <Image
-                  source={imagePath["avatar4"]}
-                  style={{ width: 64, height: 64, borderRadius: 32, marginRight: 16 }}
-                />
-                <View style={{}}>
-                  <Text.ParagraphTitle style={{ marginBottom: 8, fontWeight: "700" }}>
-                    {"Margot Robbie"}
-                  </Text.ParagraphTitle>
-                  <Text.Tertiary>{"Hero: Not indicated"}</Text.Tertiary>
-                </View>
+                </ScrollView>
               </View>
-            </View> */}
-
-
-          {/* </ScrollView> */}
+            )) : null}
+          </ScrollView>
 
           <Button.Primary
-            onPress={() => saveActor()}
+            onPress={() => {
+              let data = { actors: selectedActor }
+              setActorDataList(data)
+              console.log(Object.assign(data))
+              setModalCast(false)
+            }}
             textType={"Primary"}
             style={{ alignItems: "center", position: 'absolute', bottom: 0 }}
           >
@@ -1255,10 +1256,7 @@ const MovieNewScreen: NavStatelessComponent = () => {
             </View>
 
             <Button.Primary
-              onPress={() => {
-                saveNewActor()
-              }
-              }
+              onPress={() => saveNewActor()}
               textType={"Primary"}
               style={{ alignItems: "center" }}
             >
@@ -1406,35 +1404,36 @@ const MovieNewScreen: NavStatelessComponent = () => {
             onChangeText={(search) => setSimilarSearch(search)}
             placeholderTextColor={Colors.white1}
           />
-          {filterSimilars(movies).map((movie, index) => (
-            <TouchableOpacity onPress={() => {
-              saveSimilarMovie(movie.movieTitle, imagePath[movie.movieThumb])
-              console.log(movie, imagePath[movie.movieThumb])
-            }}>
-              <View key={index} style={styles.similarMovie}>
-                <Image
-                  source={imagePath[movie.movieThumb]}
-                  style={{ width: 80, height: 100, borderRadius: 16, marginRight: 16 }}
-                />
-                <View style={{ flex: 1 }}>
-                  <TouchableOpacity
-                    style={{ display: "flex", flexDirection: "row", marginBottom: 8 }}
-                    onPress={() => setModalSimilarDetail(true)}
-                  >
-                    <Text.ParagraphTitle style={{ flex: 1 }}>{movie.movieTitle}</Text.ParagraphTitle>
-                    <MaterialIcons
-                      name={"keyboard-arrow-right"}
-                      size={24}
-                      color={Colors.white}
-                      style={{ textAlignVertical: "center" }}
-                    />
-                  </TouchableOpacity>
+          <ScrollView style={{ width: "100%" }}>
+            {similarMovies ? similarMovies.map((movie, index) => (
+              <TouchableOpacity onPress={() => {
+                saveSimilarMovie(movie.movieName, movie.moviePoster)
+              }}>
+                <View key={index} style={styles.similarMovie}>
+                  <Image
+                    source={{ uri: movie.moviePoster }}
+                    style={{ width: 80, height: 100, borderRadius: 16, marginRight: 16 }}
+                  />
+                  <View style={{ flex: 1 }}>
+                    <TouchableOpacity
+                      style={{ display: "flex", flexDirection: "row", marginBottom: 8 }}
+                      onPress={() => setModalSimilarDetail(true)}
+                    >
+                      <Text.ParagraphTitle style={{ flex: 1 }}>{movie.movieName}</Text.ParagraphTitle>
+                      <MaterialIcons
+                        name={"keyboard-arrow-right"}
+                        size={24}
+                        color={Colors.white}
+                        style={{ textAlignVertical: "center" }}
+                      />
+                    </TouchableOpacity>
 
-                  <Text.Tertiary>{movie.movieDesShort}</Text.Tertiary>
+                    {/* <Text.Tertiary>{movie.movieDesShort}</Text.Tertiary> */}
+                  </View>
                 </View>
-              </View>
-            </TouchableOpacity>
-          ))}
+              </TouchableOpacity>
+            )) : null}
+          </ScrollView>
         </View>
       </Modal>
 
@@ -1840,7 +1839,7 @@ const MovieNewScreen: NavStatelessComponent = () => {
             textType={"Primary"}
             style={{ alignItems: "center", marginTop: 20 }}
           >
-            <Text.TagTitle>{"save Logline"}</Text.TagTitle>
+            <Text.TagTitle>{"Save Logline"}</Text.TagTitle>
           </Button.Primary>
         </View>
       </Modal>
@@ -1950,7 +1949,7 @@ const MovieNewScreen: NavStatelessComponent = () => {
         </View>
       </Modal>
 
-    </ScrollView>
+    </ScrollView >
   );
 };
 

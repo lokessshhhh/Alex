@@ -1,14 +1,16 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { ScrollView, View, Image, TouchableOpacity } from "react-native";
 import { useNavigation, useRoute } from "@react-navigation/native";
 import { MaterialIcons, MaterialCommunityIcons, Feather, Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 import { navigate } from "navigation";
 import { NavStatelessComponent } from "interfaces";
 import { Icon, Text } from "components";
 import { Colors, Font } from "style";
 
+import BaseURl from "constant/BaseURL";
 import imagesPath from "../../constant/imagePath";
 import navigationOptions from "./BookDetailScreen.navigationOptions";
 import styles from "./BookDetailScreen.styles";
@@ -18,6 +20,7 @@ const BookDetailScreen: NavStatelessComponent = () => {
   const navigation = useNavigation();
   const navigator = navigate(navigation);
   const route = useRoute();
+  const [book, setBook] = useState<any>([]);
 
   const genres = [
     { genre: "Comedy" },
@@ -41,7 +44,6 @@ const BookDetailScreen: NavStatelessComponent = () => {
     { tag: "Action" },
     { tag: "Romance" },
   ];
-
   const smiliarMovies = [
     { title: "John Wick1", thumb: "similar1" },
     { title: "John Wick2", thumb: "similar2" },
@@ -50,16 +52,45 @@ const BookDetailScreen: NavStatelessComponent = () => {
     { title: "Speed", thumb: "similar3" },
     { title: "Professional", thumb: "similar1" },
   ];
+
+  useEffect(() => {
+    console.log(route.params.id);
+    getSignleBook()
+  }, [])
+
+  const getSignleBook = async () => {
+    const token = await AsyncStorage.getItem('authToken')
+
+    fetch(BaseURl + 'books/singleBook/' + route.params.id, {
+      method: 'get',
+      headers: {
+        "Authorization": `Bearer ${token}`,
+      }
+    })
+      .then((response) => response.json())
+      .then((resposeJson) => {
+        console.log("response data: ", resposeJson.data);
+        if (resposeJson.code === 200) {
+          setBook(resposeJson.data)
+        }
+      })
+      .catch((err) => {
+        console.log(err);
+      })
+  }
+
   return (
     <ScrollView style={{ backgroundColor: Colors.GradTop }}>
-      <Image source={imagesPath["bookThumb"]} style={styles.image} />
+      <Image source={book.bookBanner ? { uri: book.bookBanner } : imagesPath["bookThumb"]} style={styles.image} />
       <View style={styles.container}>
         <View style={styles.header}>
           <TouchableOpacity onPress={() => navigator.goBack()}>
             <MaterialIcons name="arrow-back" color={Colors.white} size={20} />
           </TouchableOpacity>
           <View style={styles.rightActions}>
-            <TouchableOpacity onPress={() => navigator.openEditBook()}>
+            <TouchableOpacity onPress={() => navigator.openEditBook(
+              {id: book._id}
+            )}>
               <Icon
                 name="Edit_white"
                 width="20"
@@ -82,7 +113,7 @@ const BookDetailScreen: NavStatelessComponent = () => {
                 textAlignVertical: "center",
               }}
             >
-              {"John Wick Book"}
+              {book.title}
             </Text.Primary>
             <Text.Tertiary>{"6 Acts, 48 Chapters"}</Text.Tertiary>
           </View>
@@ -101,15 +132,13 @@ const BookDetailScreen: NavStatelessComponent = () => {
           <View style={styles.contentItem}>
             <Text.TagTitle style={{ fontSize: 22, marginBottom: 8 }}>{"Logline"}</Text.TagTitle>
             <Text.Tertiary>
-              {
-                "John Wick is on the run after killing a member of the international assassins' guild, and with a $14 million price tag on his head, he is the target of hit men and women everywhere."
-              }
+              {book.logline ? Object.values(book.logline).toString().replaceAll(',', ' ') : ''}
             </Text.Tertiary>
           </View>
 
           <View style={styles.contentItem}>
             <Text.TagTitle style={{ fontSize: 22, marginBottom: 8 }}>{"Tagline"}</Text.TagTitle>
-            <Text.Tertiary>{"Don't Hunt What You Can't Kill."}</Text.Tertiary>
+            <Text.Tertiary>{book.tagline}</Text.Tertiary>
           </View>
 
           <View style={styles.contentItem}>
@@ -117,13 +146,13 @@ const BookDetailScreen: NavStatelessComponent = () => {
             <View style={styles.writers}>
               <View style={styles.writer}>
                 <Image
-                  source={imagePath["avatar"]}
+                  source={book.author ? { uri: book.author.profileImage } : imagePath["avatar"]}
                   style={{ width: 24, height: 24, borderRadius: 12 }}
                 />
                 <Text.Secondary
                   style={{ lineHeight: Font.FontLineHeight.Tertiary, marginHorizontal: 8 }}
                 >
-                  {"Julia Ellei"}
+                  {book.author ? book.author.name : ""}
                 </Text.Secondary>
               </View>
             </View>
@@ -132,9 +161,7 @@ const BookDetailScreen: NavStatelessComponent = () => {
           <View style={styles.contentItem}>
             <Text.TagTitle style={{ fontSize: 22, marginBottom: 8 }}>{"Synopsis"}</Text.TagTitle>
             <Text.Tertiary>
-              {
-                "John runs through New York as time runs out on his 'grace period'. He tuns into an alley and sees the Tick-Tock Man, one of the Bowery King's spies. He gets into a taxi, but the roads are gridlocked.... Show More."
-              }
+              {book.synopsis}
             </Text.Tertiary>
             <Text.Tertiary style={{ color: Colors.blue }}>{"Show more"}</Text.Tertiary>
           </View>
@@ -142,48 +169,48 @@ const BookDetailScreen: NavStatelessComponent = () => {
           <View style={styles.contentItem}>
             <Text.TagTitle style={{ fontSize: 22, marginBottom: 8 }}>{"Genres"}</Text.TagTitle>
             <ScrollView style={styles.genres} horizontal={true}>
-              {genres.map((genre, index) => (
+              {book.genres ? book.genres.map((genre, index) => (
                 <View style={styles.genre} key={index}>
                   <Text.Primary
                     style={{ lineHeight: Font.FontLineHeight.Tertiary, marginHorizontal: 8 }}
                   >
-                    {genre.genre}
+                    {Object.keys(genre)}
                   </Text.Primary>
                 </View>
-              ))}
+              )) : null}
             </ScrollView>
           </View>
 
           <View style={styles.contentItem}>
             <Text.TagTitle style={{ fontSize: 22, marginBottom: 8 }}>{"Dream Cast"}</Text.TagTitle>
             <ScrollView style={styles.casts} horizontal={true}>
-              {dreamcasts.map((dreamcast, index) => (
+              {book.actors ? book.actors.map((dreamcast, index) => (
                 <View style={styles.cast} key={index}>
                   <Image
-                    source={imagePath[dreamcast.avatar]}
+                    source={{ uri: dreamcast.actorImage }}
                     style={{ width: 80, height: 80, borderRadius: 40 }}
                   />
                   <Text.Primary style={{ textAlign: "center", marginTop: 10 }}>
-                    {dreamcast.castName}
+                    {dreamcast.actorName}
                   </Text.Primary>
-                  <Text.Primary style={styles.castName}>{dreamcast.realName}</Text.Primary>
+                  <Text.Primary style={styles.castName}>{dreamcast.heroName}</Text.Primary>
                 </View>
-              ))}
+              )) : null}
             </ScrollView>
           </View>
 
           <View style={styles.contentItem}>
             <Text.TagTitle style={{ fontSize: 22, marginBottom: 8 }}>{"Tags"}</Text.TagTitle>
             <ScrollView style={styles.genres} horizontal={true}>
-              {tags.map((tag, index) => (
+              {book.tags ? book.tags.map((tag, index) => (
                 <View style={styles.genre} key={index}>
                   <Text.Primary
                     style={{ lineHeight: Font.FontLineHeight.Tertiary, marginHorizontal: 8 }}
                   >
-                    {tag.tag}
+                    {tag}
                   </Text.Primary>
                 </View>
-              ))}
+              )) : null}
             </ScrollView>
           </View>
 
@@ -192,17 +219,17 @@ const BookDetailScreen: NavStatelessComponent = () => {
               {"Similar Movies"}
             </Text.TagTitle>
             <ScrollView style={styles.casts} horizontal={true}>
-              {smiliarMovies.map((similarMovie, index) => (
+              {book.similarBooks ? book.similarBooks.map((similarMovie, index) => (
                 <View style={[styles.cast, { marginTop: 6 }]} key={index}>
                   <Image
-                    source={imagePath[similarMovie.thumb]}
+                    source={{ uri: similarMovie.bookPoster }}
                     style={{ width: 80, height: 100, borderRadius: 16 }}
                   />
                   <Text.Primary style={{ textAlign: "center", marginTop: 10 }}>
-                    {similarMovie.title}
+                    {similarMovie.bookName}
                   </Text.Primary>
                 </View>
-              ))}
+              )) : null}
             </ScrollView>
           </View>
         </View>

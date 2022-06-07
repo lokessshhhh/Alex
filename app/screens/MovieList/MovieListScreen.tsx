@@ -1,7 +1,7 @@
-import React, { useRef, useState } from "react";
+import React, { useRef, useEffect } from "react";
 import {
   ImageBackground,
-  ScrollView,
+  FlatList,
   TouchableOpacity,
   View,
   Image,
@@ -11,9 +11,7 @@ import {
 import { useNavigation } from "@react-navigation/native";
 import { LinearGradient } from "expo-linear-gradient";
 import { AntDesign, Ionicons, MaterialCommunityIcons, MaterialIcons } from "@expo/vector-icons";
-import ToggleSwitch from "toggle-switch-react-native";
-import { color } from "@storybook/addon-knobs";
-import SwitchToggle from "react-native-switch-toggle";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { vw, vh } from "react-native-css-vh-vw";
 
 import { navigate } from "navigation";
@@ -24,6 +22,7 @@ import { Colors, Font } from "style";
 import imagePath from "../../constant/imagePath";
 import navigationOptions from "./MovieListScreen.navigationOptions";
 import styles from "./MovieListScreenstyles";
+import BaseURl from "constant/BaseURL";
 
 const MovieListScreen: NavStatelessComponent = () => {
   const navigation = useNavigation();
@@ -81,6 +80,8 @@ const MovieListScreen: NavStatelessComponent = () => {
   };
 
   const [search, setSearch] = React.useState("");
+  const [actorData, setActorData] = React.useState<any>();
+  const [movieData, setMovieData] = React.useState<any>([]);
 
   //header scroll styling
   const scrollPosition = useRef(new Animated.Value(0)).current;
@@ -115,6 +116,33 @@ const MovieListScreen: NavStatelessComponent = () => {
     extrapolateLeft: "identity",
     extrapolateRight: "clamp",
   });
+
+  useEffect(() => {
+    movieDetails()
+  }, [])
+
+  //get movie
+  const movieDetails = async () => {
+    const token = await AsyncStorage.getItem('authToken')
+
+    fetch(BaseURl + 'movies/movieDetails', {
+      method: 'get',
+      headers: {
+        "Authorization": `Bearer ${token}`,
+      }
+    })
+      .then((response) => response.json())
+      .then((responseJson) => {
+        console.log(responseJson)
+        if (responseJson.code === 200) {
+          setActorData(responseJson.data.actors)
+          setMovieData(responseJson.data)
+        }
+      })
+      .catch((error) => {
+        console.log(error)
+      })
+  }
 
   return (
     <ImageBackground source={imagePath["background"]} style={styles.imageBackground}>
@@ -161,20 +189,24 @@ const MovieListScreen: NavStatelessComponent = () => {
             placeholderTextColor={Colors.white1}
           />
           <View style={styles.movieListContainer}>
-            {filterList(movies).map((listItem, index) => (
+            {/* {filterList(movies).map((listItem, index) => ( */}
+            {movieData.map((item, index) => (
               <TouchableOpacity
                 style={styles.movieItem}
                 key={index}
-                onPress={() => navigator.openMovieDetail()}
+                onPress={() =>  navigator.openMovieDetail(
+                  { id: item._id}
+                )}
               >
-                <Image source={imagePath[listItem.movieThumb]} style={styles.thumbImage} />
+                <Image source={{ uri: item.movieBanner }} style={styles.thumbImage} />
                 <Text.ModalTitle style={{ lineHeight: 24, fontWeight: "700" }}>
-                  {listItem.movieTitle}
+                  {item.title}
                 </Text.ModalTitle>
                 <Text.Tertiary
                   style={{ lineHeight: 24, fontWeight: "400", opacity: 0.8, textAlign: "center" }}
                 >
-                  {listItem.movieCategory}
+                  {item.genres.map(genre => Object.keys(genre)+', ')}
+                  {/* {Object.keys(item.genres).toString().substring(0,22)} */}
                 </Text.Tertiary>
                 <LinearGradient
                   style={styles.movieRate}
@@ -182,7 +214,7 @@ const MovieListScreen: NavStatelessComponent = () => {
                   start={{ x: 0.0, y: 0.0 }}
                   end={{ x: 1.0, y: 0.0 }}
                 >
-                  <Text.Primary>{listItem.movieRate}</Text.Primary>
+                  <Text.Primary>{'20'}</Text.Primary>
                   <Text.Primary
                     style={{
                       fontSize: 10,

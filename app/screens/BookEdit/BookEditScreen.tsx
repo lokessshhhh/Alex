@@ -1,4 +1,4 @@
-import React, { useRef } from "react";
+import React, { useRef, useEffect } from "react";
 import {
   ScrollView,
   View,
@@ -20,12 +20,15 @@ import {
   Ionicons,
 } from "@expo/vector-icons";
 import { vw, vh } from "react-native-css-vh-vw";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import * as ImagePicker from "expo-image-picker";
 
 import { navigate } from "navigation";
 import { NavStatelessComponent } from "interfaces";
 import { Icon, Text, Input, Button } from "components";
 import { Colors, Font } from "style";
 
+import BaseURl from "constant/BaseURL";
 import imagesPath from "../../constant/imagePath";
 import navigationOptions from "./BookEditScreen.navigationOptions";
 import styles from "./BookEditScreen.styles";
@@ -54,6 +57,18 @@ const BookEditScreen: NavStatelessComponent = () => {
   const [modalRemoveMovie, setModalRemoveMovie] = React.useState(false);
   //search states
   const [similarSearch, setSimilarSearch] = React.useState("");
+
+  //Movie Data
+  const [bookBanner, setBookBanner] = React.useState("");
+  const [title, setTitle] = React.useState("");
+  const [logLine, setLogLine] = React.useState("");
+  const [tagLine, setTagLine] = React.useState("");
+  const [synopsis, setSynopsis] = React.useState("");
+  const [genre, setGenre] = React.useState([]);
+  const [actors, setActors] = React.useState([]);
+  const [tags, setTags] = React.useState([]);
+  const [similarBook, setSimilarBook] = React.useState([]);
+
   const filterSimilars = (list) => {
     return list.filter((listItem) =>
       listItem.movieTitle.toLowerCase().includes(similarSearch.toLowerCase())
@@ -117,7 +132,7 @@ const BookEditScreen: NavStatelessComponent = () => {
     { castName: "Keanu Reeves", realName: "John Wick", avatar: "avatar3" },
     { castName: "Laetitia Casta", realName: "Laetitia Casta", avatar: "avatar2" },
   ];
-  const tags = [{ tag: "Comedy" }, { tag: "Cops" }, { tag: "Thriller" }, { tag: "Fantasy" }];
+  // const tags = [{ tag: "Comedy" }, { tag: "Cops" }, { tag: "Thriller" }, { tag: "Fantasy" }];
 
   const smiliarMovies = [
     { title: "Speed 7", thumb: "similar1" },
@@ -177,6 +192,51 @@ const BookEditScreen: NavStatelessComponent = () => {
     extrapolateLeft: "identity",
     extrapolateRight: "clamp",
   });
+
+  useEffect(() => {
+    getSignleBook()
+  }, [])
+
+  const getSignleBook = async () => {
+    const token = await AsyncStorage.getItem('authToken')
+
+    fetch(BaseURl + 'books/singleBook/' + route.params.id, {
+      method: 'get',
+      headers: {
+        "Authorization": `Bearer ${token}`,
+      }
+    })
+      .then((response) => response.json())
+      .then((resposeJson) => {
+        console.log("response data: ", resposeJson.data);
+        if (resposeJson.code === 200) {
+          setBookBanner(resposeJson.data.bookBanner)
+          setTitle(resposeJson.data.title)
+          setLogLine(Object.values(resposeJson.data.logline).toString().replaceAll(',', ' '))
+          setTagLine(resposeJson.data.tagline)
+          setSynopsis(resposeJson.data.synopsis)
+          setGenre(resposeJson.data.genres)
+          setActors(resposeJson.data.actors)
+          setTags(resposeJson.data.tags)
+          setSimilarBook(resposeJson.data.similarBooks)
+        }
+      })
+      .catch((err) => {
+        console.log(err);
+      })
+  }
+
+  const pickMovieBanner = async () => {
+    let result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.All,
+      allowsEditing: true,
+      aspect: [4, 3],
+      quality: 1,
+    });
+    console.log(result);
+    setBookBanner(result.uri);
+  }
+
   return (
     <View style={{ backgroundColor: Colors.GradTop }}>
       <View style={styles.container}>
@@ -196,7 +256,7 @@ const BookEditScreen: NavStatelessComponent = () => {
             }}
           >
             <Animated.Text style={[styles.headerText, { fontSize: fontsize }]}>
-              {"Edit Series"}
+              {"Edit Book"}
             </Animated.Text>
           </Animated.View>
         </Animated.View>
@@ -208,9 +268,9 @@ const BookEditScreen: NavStatelessComponent = () => {
           })}
         >
           <View style={styles.movieTitle}>
-            <View style={styles.thumb}>
+            <TouchableOpacity style={styles.thumb} onPress={() => pickMovieBanner()}>
               <Image
-                source={imagePath["bookThumb"]}
+                source={bookBanner ? { uri: bookBanner } : imagePath["bookThumb"]}
                 style={{ width: 80, height: 80, borderRadius: 16 }}
               />
               <TouchableOpacity
@@ -218,18 +278,19 @@ const BookEditScreen: NavStatelessComponent = () => {
               >
                 <Icon name="Thumb" width="24" height="24" fill="none" />
               </TouchableOpacity>
-            </View>
+            </TouchableOpacity>
             <View style={{ flex: 1 }}>
               <Text.ParagraphTitle style={{ marginBottom: 8 }}>{"Title"}</Text.ParagraphTitle>
-              <Input placeholder={"Enter Text"} value={"John Wick Book"} />
+              <Input placeholder={"Enter Text"} value={title} onChangeText={(text) => setTitle(text)} />
             </View>
           </View>
           <View>
             <View style={styles.contentItem}>
               <Text.ParagraphTitle style={{ marginBottom: 8 }}>{"Logline"}</Text.ParagraphTitle>
               <TextInput
-                value="An aspiring author during the civil rights movement of the 1960s decides to write a book detailing the African-American maid’s point of view on the white families for which they work, and the hardships they go through on a daily basis."
+                value={logLine}
                 placeholder={"Describe your question"}
+                onChangeText={(text) => setLogLine(text)}
                 placeholderTextColor={Colors.white1}
                 style={{
                   backgroundColor: Colors.inputBack,
@@ -247,13 +308,14 @@ const BookEditScreen: NavStatelessComponent = () => {
 
             <View style={styles.contentItem}>
               <Text.ParagraphTitle style={{ marginBottom: 8 }}>{"Tagline"}</Text.ParagraphTitle>
-              <Input placeholder={"Enter text"} value={"Fear your wishes come true."} />
+              <Input placeholder={"Enter text"} value={tagLine} onChangeText={(text) => setTagLine(text)} />
             </View>
 
             <View style={styles.contentItem}>
               <Text.ParagraphTitle style={{ marginBottom: 8 }}>{"Synopsis"}</Text.ParagraphTitle>
               <TextInput
-                value="Use filler text that has been edited for length and format to match the characteristics of real content as closely as possible."
+                value={synopsis}
+                onChangeText={(text) => setSynopsis(text)}
                 placeholder={"Describe your question"}
                 placeholderTextColor={Colors.white1}
                 style={{
@@ -278,12 +340,12 @@ const BookEditScreen: NavStatelessComponent = () => {
                 >
                   <Text.Primary style={styles.normalBtn}>{"Add"}</Text.Primary>
                 </TouchableOpacity>
-                {genres.map((genre, index) => (
+                {genre ? genre.map((genre, index) => (
                   <View style={styles.genre} key={index}>
                     <Text.Primary
                       style={{ lineHeight: Font.FontLineHeight.Tertiary, marginHorizontal: 8 }}
                     >
-                      {genre.genre}
+                      {Object.keys(genre)}
                     </Text.Primary>
                     <TouchableOpacity
                       onPress={() => setModalRemoveGenre(true)}
@@ -302,7 +364,7 @@ const BookEditScreen: NavStatelessComponent = () => {
                       </View>
                     </TouchableOpacity>
                   </View>
-                ))}
+                )) : null}
               </ScrollView>
             </View>
 
@@ -327,16 +389,16 @@ const BookEditScreen: NavStatelessComponent = () => {
                     {"Actor"}
                   </Text.Primary>
                 </View>
-                {dreamcasts.map((dreamcast, index) => (
+                {actors ? actors.map((dreamcast, index) => (
                   <View style={styles.cast} key={index}>
                     <Image
-                      source={imagePath[dreamcast.avatar]}
+                      source={{ uri: dreamcast.actorImage }}
                       style={{ width: 80, height: 80, borderRadius: 40 }}
                     />
                     <Text.Primary style={{ textAlign: "center", marginTop: 10 }}>
-                      {dreamcast.castName}
+                      {dreamcast.actorName}
                     </Text.Primary>
-                    <Text.Primary style={styles.castName}>{dreamcast.realName}</Text.Primary>
+                    <Text.Primary style={styles.castName}>{dreamcast.heroName}</Text.Primary>
                     <TouchableOpacity
                       onPress={() => setModalRemoveCast(true)}
                       style={{ position: "absolute", top: 4, right: 4 }}
@@ -354,7 +416,7 @@ const BookEditScreen: NavStatelessComponent = () => {
                       </View>
                     </TouchableOpacity>
                   </View>
-                ))}
+                )) : null}
               </ScrollView>
             </View>
 
@@ -368,12 +430,12 @@ const BookEditScreen: NavStatelessComponent = () => {
                     <Text.Primary style={styles.normalBtn}>{"Add"}</Text.Primary>
                   </TouchableOpacity>
                 </View>
-                {tags.map((tag, index) => (
+                {tags ? tags.map((tag, index) => (
                   <View style={styles.genre} key={index}>
                     <Text.Primary
                       style={{ lineHeight: Font.FontLineHeight.Tertiary, marginHorizontal: 8 }}
                     >
-                      {tag.tag}
+                      {tag}
                     </Text.Primary>
                     <TouchableOpacity
                       onPress={() => setModalRemoveTag(true)}
@@ -392,7 +454,7 @@ const BookEditScreen: NavStatelessComponent = () => {
                       </View>
                     </TouchableOpacity>
                   </View>
-                ))}
+                )) : null}
               </ScrollView>
             </View>
 
@@ -419,14 +481,14 @@ const BookEditScreen: NavStatelessComponent = () => {
                     {"Movie"}
                   </Text.Primary>
                 </View>
-                {smiliarMovies.map((similarMovie, index) => (
+                {similarBook ? similarBook.map((similarBooks, index) => (
                   <View style={[styles.cast, { marginTop: 6 }]} key={index}>
                     <Image
-                      source={imagePath[similarMovie.thumb]}
+                      source={{ uri: similarBooks.bookPoster }}
                       style={{ width: 80, height: 100, borderRadius: 16 }}
                     />
                     <Text.Primary style={{ textAlign: "center", marginTop: 10 }}>
-                      {similarMovie.title}
+                      {similarBooks.bookName}
                     </Text.Primary>
                     <TouchableOpacity
                       onPress={() => setModalRemoveMovie(true)}
@@ -445,7 +507,7 @@ const BookEditScreen: NavStatelessComponent = () => {
                       </View>
                     </TouchableOpacity>
                   </View>
-                ))}
+                )) : null}
               </ScrollView>
             </View>
           </View>

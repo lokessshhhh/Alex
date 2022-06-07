@@ -30,6 +30,9 @@ import SignInOtherScreen from "../../screens/SignInOther";
 import SignInScreen from "../../screens/SignIn";
 import TrackingScreen from "../../screens/TrackingScreen";
 import TrackingWorkInfo from "../../screens/TrackingworkInfo"
+import MovieEditScreen from "../../screens/MovieEdit";
+import SeriesEditScreen from "../../screens/SeriesEdit";
+import BookEditScreen from "../../screens/BookEdit";
 // Amplify.configure(AWSConfig);
 
 
@@ -105,7 +108,8 @@ const AppStackNavigator = () => {
       <AppStack.Screen
         name="EditMovie"
         options={{ headerShown: false }}
-        component={EditMovieNavigator}
+        component={MovieEditScreen}
+        // component={EditMovieNavigator}
       />
       <AppStack.Screen
         name="MovieScene"
@@ -120,7 +124,8 @@ const AppStackNavigator = () => {
       <AppStack.Screen
         name="EditSeries"
         options={{ headerShown: false }}
-        component={EditSeriesNavigator}
+        component={SeriesEditScreen}
+        // component={EditSeriesNavigator}
       />
       <AppStack.Screen
         name="SeriesScene"
@@ -135,7 +140,8 @@ const AppStackNavigator = () => {
       <AppStack.Screen
         name="EditBook"
         options={{ headerShown: false }}
-        component={EditBookNavigator}
+        component={BookEditScreen}
+        // component={EditBookNavigator}
       />
       <AppStack.Screen
         name="BookScene"

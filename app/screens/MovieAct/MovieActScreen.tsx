@@ -1,4 +1,4 @@
-import React, { useRef } from "react";
+import React, { useRef, useEffect } from "react";
 import {
   ScrollView,
   View,
@@ -103,6 +103,10 @@ const MovieActScreen: NavStatelessComponent = () => {
     },
   ];
 
+  useEffect(()=> {
+    console.log(route);
+    
+  },[])
   //header animation
   const scrollPosition = useRef(new Animated.Value(0)).current;
   const minHeaderHeight = 30;
@@ -163,7 +167,9 @@ const MovieActScreen: NavStatelessComponent = () => {
           {scenes.map((scene, index) => (
             <TouchableOpacity
               style={styles.navigationBtn}
-              onPress={() => navigator.openMovieSceneScreen()}
+              onPress={() => navigator.openMovieSceneScreen(
+                { id: route.params.id }
+              )}
               key={index}
             >
               <View style={styles.buttonContainer}>
