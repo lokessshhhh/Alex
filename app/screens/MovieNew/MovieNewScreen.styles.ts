@@ -13,7 +13,7 @@ const styles = StyleSheet.create({
     display: "flex",
     flexDirection: "column",
     backgroundColor: Colors.transparent,
-    height: vh(100),
+    height: vh(95),
     paddingHorizontal: 16,
   },
   image: {
@@ -70,7 +70,7 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     backgroundColor: "rgba(29, 174, 255, 0.15)",
     borderRadius: 20,
-    color: Colors.blue,
+    overflow:'hidden',
   },
   casts: {
     display: "flex",

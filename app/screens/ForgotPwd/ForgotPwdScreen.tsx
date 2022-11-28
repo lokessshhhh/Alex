@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 import {
   ImageBackground,
   ScrollView,
@@ -6,7 +6,10 @@ import {
   View,
   Image,
   Dimensions,
+  KeyboardAvoidingView,
+  Platform,
 } from "react-native";
+import * as Linking from "expo-linking";
 import { useNavigation, useRoute } from "@react-navigation/native";
 import { LinearGradient } from "expo-linear-gradient";
 import { AntDesign, Ionicons } from "@expo/vector-icons";
@@ -15,16 +18,17 @@ import Modal from "react-native-modal";
 import { vw, vh } from "react-native-css-vh-vw";
 import { Snackbar } from "react-native-paper";
 import AnimatedLoader from "react-native-animated-loader";
-
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { t } from "utils";
 import { navigate } from "navigation";
 import { NavStatelessComponent } from "interfaces";
 import { Button, Icon, Input, Text } from "components";
 import { Colors } from "style";
-
+import BaseURl from "constant/BaseURL";
 import navigationOptions from "./ForgotPwdScreen.navigationOptions";
 import styles from "./ForgotPwdScreen.styles";
 import imagePath from "../../constant/imagePath";
+import axios from "axios";
 
 const ForgotPwdScreen: NavStatelessComponent = () => {
   const navigation = useNavigation();
@@ -71,24 +75,50 @@ const ForgotPwdScreen: NavStatelessComponent = () => {
     });
   };
   const requestConfirmCode = () => {
-    if (checkValidation()) {
-      setLoading(true);
-      Auth.forgotPassword(email)
-        .then((data) => {
-          setLoading(false);
-          console.log(data);
-          showToast("Check your verficiation code in mailbox", 1);
-          setModalConfirmCode(true);
-        })
-        .catch((err) => {
-          setLoading(false);
-          console.log("error", err);
-          if (err.name == "UserNotFoundException") {
-            showToast("The Email account doesn't exist", 0);
+    // if (checkValidation()) {
+    //   setLoading(true);
+    //   Auth.forgotPassword(email)
+    //     .then((data) => {
+    //       setLoading(false);
+    //       console.log(data);
+    //       showToast("Check your verficiation code in mailbox", 1);
+    //       setModalConfirmCode(true);
+    //     })
+    //     .catch((err) => {
+    //       setLoading(false);
+    //       console.log("error", err);
+    //       if (err.name == "UserNotFoundException") {
+    //         showToast("The Email account doesn't exist", 0);
+    //       }
+    //     });
+    // }
+  };
+
+  const resetPasswordEmail = async () => {
+    if (checkValidation() == true) {
+      await AsyncStorage.setItem("Email", email);
+      const data = {
+        email: email,
+        link: "myapp://ForgotPwdNew",
+      };
+      console.log(data);
+      await axios
+        .post(BaseURl + "auth/resetPasswordEmail", data)
+        .then((response) => {
+          console.log(response.data);
+          if (response.data.code === 200) {
+            alert(response.data.message);
+            navigation.navigate("ForgotPwdNew");
+          } else {
+            alert(response.data.message);
           }
+        })
+        .catch((error) => {
+          console.log(error);
         });
     }
   };
+
   return (
     // <ImageBackground source={imagePath["background"]} style={styles.imageBackground}>
 
@@ -101,19 +131,27 @@ const ForgotPwdScreen: NavStatelessComponent = () => {
         <Image source={imagePath["LogoText"]} style={styles.logoText} />
       </View>
       <View style={styles.bottomContainer}>
-        <Text.TagTitle style={styles.bottomLine1}>{t("UI_RESET_YOUR_PASSWORD_L")}</Text.TagTitle>
-        <Input
-          value={email}
-          placeholder={t("UI_EMAIL_I")}
-          onChangeText={(value) => {
-            setEmail(value);
-          }}
-        />
+      <KeyboardAvoidingView
+           
+           behavior={Platform.OS === "ios" ? "position" : null}
+           keyboardVerticalOffset={Platform.select({ ios: 600, android: 150 })}
+           enabled={true}
+         >
+          <Text.TagTitle style={styles.bottomLine1}>{t("UI_RESET_YOUR_PASSWORD_L")}</Text.TagTitle>
+          <Input
+            keyboardType="email-address"
+            value={email}
+            placeholder={t("UI_EMAIL_I")}
+            onChangeText={(value) => {
+              setEmail(value);
+            }}
+          />
+        </KeyboardAvoidingView>
 
         <Button.Primary
           fullWidth={true}
           textType={"Primary"}
-          onPress={() => requestConfirmCode()}
+          onPress={() => resetPasswordEmail()}
           style={{ marginBottom: 24, marginTop: 8 }}
         >
           <Text.TagTitle style={{ textTransform: "none", lineHeight: 24 }}>

@@ -5,7 +5,7 @@ import { Colors, Font, Layout } from "style";
 
 const styles = StyleSheet.create({
   imageBackground: {
-    height: vh(100),
+    // height: vh(100),
     width: vw(100)
   },
   container: {

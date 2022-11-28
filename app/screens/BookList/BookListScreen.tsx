@@ -120,6 +120,9 @@ const SeriesListScreen: NavStatelessComponent = () => {
 
   useEffect(() => {
     bookDetails()
+    navigation.addListener('focus', () => {
+      bookDetails()
+    })
   }, [])
   //get book
   const bookDetails = async () => {
@@ -143,6 +146,22 @@ const SeriesListScreen: NavStatelessComponent = () => {
       })
   }
 
+
+  const searchText = (e) => {
+    let text = e.toLowerCase();
+    let trucks = bookData;
+    let filteredName = trucks.filter((item) => {
+      return !item.title || item.title === "" ? null : item.title.toLowerCase().match(text);
+    });
+    if (!text || text === "") {
+      bookDetails();
+    } else if (!Array.isArray(filteredName) && !filteredName.length) {
+      console.log("no data");
+    } else if (Array.isArray(filteredName)) {
+      setBookData(filteredName);
+    }
+  };
+
   return (
     <ImageBackground source={imagePath["background"]} style={styles.imageBackground}>
       <View style={styles.container}>
@@ -164,7 +183,7 @@ const SeriesListScreen: NavStatelessComponent = () => {
               </Animated.Text>
             </Animated.View>
             <Animated.View style={{ transform: [{ translateY: buttonPositionY }] }}>
-              <TouchableOpacity onPress={() => navigator.openNewSeries()}>
+              <TouchableOpacity onPress={() => {navigator.openNewBook()}}>
                 <AntDesign
                   name="plus"
                   size={20}
@@ -184,7 +203,7 @@ const SeriesListScreen: NavStatelessComponent = () => {
           <TextInput
             style={styles.searchBar}
             placeholder={"Search..."}
-            onChangeText={(search) => setSearch(search)}
+            onChangeText={(e) => searchText(e)}
             placeholderTextColor={Colors.white1}
           />
           <View style={styles.movieListContainer}>
@@ -201,10 +220,10 @@ const SeriesListScreen: NavStatelessComponent = () => {
                 <Text.ModalTitle style={{ lineHeight: 24, fontWeight: "700" }}>
                   {item.title}
                 </Text.ModalTitle>
-                <Text.Tertiary
-                  style={{ lineHeight: 24, fontWeight: "400", opacity: 0.8, textAlign: "center" }}
+                <Text.Tertiary numberOfLines={1} ellipsizeMode='tail'
+                  style={{ lineHeight: 24, fontWeight: "400", opacity: 0.8, textAlign: 'left' }}
                 >
-                  {item.genres.map(genre => Object.keys(genre)+', ')}
+                  {item.genres.map(genre => Object.keys(genre)).toString()}
                   {/* {Object.keys(item.genres).toString().substring(0, 22)} */}
                 </Text.Tertiary>
                 <LinearGradient

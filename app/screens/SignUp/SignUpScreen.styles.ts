@@ -6,22 +6,22 @@ import { Colors, Font, Layout } from "style";
 const styles = StyleSheet.create({
   imageBackground: {
     // flex:1
-    height: vh(100),
+    // height: vh(100),
     width: vw(100)
   },
   container: {
     // height: vh(100),
-    flex: 1
+    flex: 1,
   },
   logoContainer: {
     position: "absolute",
-    top: vh(15),
+    top: vh(5),
     alignItems: "center",
     width: "100%",
     paddingHorizontal: 16,
   },
   logoText: {
-    marginTop: 24,
+    marginTop: 0,
   },
 
   bottomContainer: {
@@ -31,7 +31,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
   },
   bottomLine1: {
-    marginBottom: 24,
+    marginBottom: 30,
     textAlign: "center",
   },
   transparentBtn: {

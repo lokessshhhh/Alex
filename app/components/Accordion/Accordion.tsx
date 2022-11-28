@@ -20,8 +20,11 @@ import styles from "./Accordion.styles";
 interface Props {
   title: string;
   data: any;
+  seriesId: string;
+  seasonId: string;
+  episodeId: string;
 }
-const Accordion: React.FC<Props> = ({ title, data }) => {
+const Accordion: React.FC<Props> = ({ title, data, seriesId, seasonId, episodeId }) => {
   const navigation = useNavigation();
   const navigator = navigate(navigation);
   const [dataArray, setDataArray] = React.useState(data);
@@ -52,9 +55,15 @@ const Accordion: React.FC<Props> = ({ title, data }) => {
             <View key={index}>
               <TouchableOpacity
                 style={[styles.childRow]}
-                onPress={() => navigator.openSeriesActScreen()}
+                onPress={() => navigator.openSeriesActScreen({
+                  seriesId: seriesId,
+                  seasonId: seasonId,
+                  episodeId: episodeId,
+                  actId: data.id,
+                  episodeName: title
+                })}
               >
-                <Text style={[styles.itemInActive]}>{data.actName}</Text>
+                <Text style={[styles.itemInActive]}>{data.name}</Text>
                 <MaterialIcons name={"keyboard-arrow-right"} size={24} color={Colors.white} />
               </TouchableOpacity>
               <View style={styles.childHr} />

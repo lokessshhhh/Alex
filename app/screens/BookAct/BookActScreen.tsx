@@ -1,4 +1,4 @@
-import React, { useRef } from "react";
+import React, { useRef, useEffect, useState } from "react";
 import {
   ScrollView,
   View,
@@ -8,9 +8,10 @@ import {
   Dimensions,
   Animated,
 } from "react-native";
-import Modal from "react-native-modal";
+import axios from "axios";
 import { useNavigation, useRoute } from "@react-navigation/native";
-import { Snackbar } from "react-native-paper";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import Toast from "react-native-root-toast";
 import {
   MaterialIcons,
   MaterialCommunityIcons,
@@ -28,6 +29,7 @@ import { NavStatelessComponent } from "interfaces";
 import { Icon, Text, Input, Button } from "components";
 import { Colors, Font } from "style";
 
+import BaseURl from "constant/BaseURL";
 import imagesPath from "../../constant/imagePath";
 import navigationOptions from "./BookActScreen.navigationOptions";
 import styles from "./BookActScreen.styles";
@@ -36,72 +38,73 @@ import imagePath from "../../constant/imagePath";
 const BookActScreen: NavStatelessComponent = () => {
   const navigation = useNavigation();
   const navigator = navigate(navigation);
-  const route = useRoute();
+  const route = useRoute<any>();
   const deviceWidth = Dimensions.get("window").width;
-  const scenes = [
-    {
-      title: "Chapter 1",
-      image: "Open Image Pt. 1",
-      desc:
-        "Watch Molly's Game yesterday, good movie, just a little too long for me Kevin Costner was excellent, as per usual.",
-      avatars: [{ imgName: "avatar3" }, { imgName: "avatar2" }],
-    },
-    {
-      title: "Finding a Treasure",
-      image: "",
-      desc:
-        "Watch Molly's Game yesterday, good movie, just a little too long for me Kevin Costner was excellent, as per usual.",
-      avatars: [{ imgName: "avatar3" }, { imgName: "avatar2" }],
-    },
-    {
-      title: "Chapter 3",
-      image: "Open Image Pt. 3",
-      desc: "Scene text has not been added yet.",
-      avatars: [],
-    },
-    {
-      title: "Chapter 4",
-      image: "Open Image Pt. 4",
-      desc: "Scene text has not been added yet.",
-      avatars: [],
-    },
-    {
-      title: "Chapter 5",
-      image: "Open Image Pt. 5",
-      desc: "Scene text has not been added yet.",
-      avatars: [],
-    },
-    {
-      title: "Chapter 6",
-      image: "Open Image Pt. 6",
-      desc: "Scene text has not been added yet.",
-      avatars: [],
-    },
-    {
-      title: "Chapter 7",
-      image: "Open Image Pt. 7",
-      desc: "Scene text has not been added yet.",
-      avatars: [],
-    },
-    {
-      title: "Chapter 8",
-      image: "Open Image Pt. 8",
-      desc: "Scene text has not been added yet.",
-      avatars: [],
-    },
-    {
-      title: "Chapter 9",
-      image: "Open Image Pt. 9",
-      desc: "Scene text has not been added yet.",
-      avatars: [],
-    },
-    {
-      title: "Chapter 10",
-      image: "Open Image Pt. 10",
-      desc: "Scene text has not been added yet.",
-      avatars: [],
-    },
-  ];
+  const [scenes, setScenes] = useState([]);
+  // const scenes = [
+  //   {
+  //     title: "Chapter 1",
+  //     image: "Open Image Pt. 1",
+  //     desc:
+  //       "Watch Molly's Game yesterday, good movie, just a little too long for me Kevin Costner was excellent, as per usual.",
+  //     avatars: [{ imgName: "avatar3" }, { imgName: "avatar2" }],
+  //   },
+  //   {
+  //     title: "Finding a Treasure",
+  //     image: "",
+  //     desc:
+  //       "Watch Molly's Game yesterday, good movie, just a little too long for me Kevin Costner was excellent, as per usual.",
+  //     avatars: [{ imgName: "avatar3" }, { imgName: "avatar2" }],
+  //   },
+  //   {
+  //     title: "Chapter 3",
+  //     image: "Open Image Pt. 3",
+  //     desc: "Scene text has not been added yet.",
+  //     avatars: [],
+  //   },
+  //   {
+  //     title: "Chapter 4",
+  //     image: "Open Image Pt. 4",
+  //     desc: "Scene text has not been added yet.",
+  //     avatars: [],
+  //   },
+  //   {
+  //     title: "Chapter 5",
+  //     image: "Open Image Pt. 5",
+  //     desc: "Scene text has not been added yet.",
+  //     avatars: [],
+  //   },
+  //   {
+  //     title: "Chapter 6",
+  //     image: "Open Image Pt. 6",
+  //     desc: "Scene text has not been added yet.",
+  //     avatars: [],
+  //   },
+  //   {
+  //     title: "Chapter 7",
+  //     image: "Open Image Pt. 7",
+  //     desc: "Scene text has not been added yet.",
+  //     avatars: [],
+  //   },
+  //   {
+  //     title: "Chapter 8",
+  //     image: "Open Image Pt. 8",
+  //     desc: "Scene text has not been added yet.",
+  //     avatars: [],
+  //   },
+  //   {
+  //     title: "Chapter 9",
+  //     image: "Open Image Pt. 9",
+  //     desc: "Scene text has not been added yet.",
+  //     avatars: [],
+  //   },
+  //   {
+  //     title: "Chapter 10",
+  //     image: "Open Image Pt. 10",
+  //     desc: "Scene text has not been added yet.",
+  //     avatars: [],
+  //   },
+  // ];
   //header animation
   const scrollPosition = useRef(new Animated.Value(0)).current;
   const minHeaderHeight = 30;
@@ -130,6 +133,36 @@ const BookActScreen: NavStatelessComponent = () => {
     extrapolateRight: "clamp",
   });
 
+  useEffect(() => {
+    navigation.addListener('focus', () => {
+      getScreenplayScene()
+    })
+    getScreenplayScene()
+  }, [])
+
+  const getScreenplayScene = async () => {
+    const token = await AsyncStorage.getItem('authToken')
+    const data = {
+      bookId: route.params.id,
+      actId: route.params.actId,
+    }
+    console.log(data)
+    axios.post(BaseURl + 'books/getManuScriptChapter', data, {
+      headers: {
+        "Authorization": `Bearer ${token}`,
+      },
+    })
+      .then((resposeJson) => {
+        console.log("response data: ", resposeJson.data);
+        if (resposeJson.data.code === 200) {
+          setScenes(resposeJson.data.data)
+        }
+      })
+      .catch((err) => {
+        console.log(err);
+      })
+  }
+
   return (
     <View style={{ backgroundColor: Colors.GradTop }}>
       <View style={styles.container}>
@@ -149,7 +182,7 @@ const BookActScreen: NavStatelessComponent = () => {
             }}
           >
             <Animated.Text style={[styles.headerText, { fontSize: fontsize }]}>
-              {"Act 1"}
+              {route.params.actName}
             </Animated.Text>
           </Animated.View>
         </Animated.View>
@@ -160,10 +193,17 @@ const BookActScreen: NavStatelessComponent = () => {
             useNativeDriver: false,
           })}
         >
-          {scenes.map((scene, index) => (
+          {scenes.map((chapter, index) => (
+          // {route.params.chapters.map((chapter, index) => (
             <TouchableOpacity
               style={styles.navigationBtn}
-              onPress={() => navigator.openBookSceneScreen()}
+              onPress={() => navigator.openBookSceneScreen(
+                {
+                  id: route.params.id,
+                  actId: route.params.actId,
+                  chapter: chapter
+                }
+              )}
               key={index}
             >
               <View style={styles.buttonContainer}>
@@ -182,10 +222,10 @@ const BookActScreen: NavStatelessComponent = () => {
                 <View style={styles.sceneDesc}>
                   <View style={styles.sceneTitle}>
                     <View style={{ display: "flex", flexDirection: "column" }}>
-                      <Text.ParagraphTitle>{scene.title}</Text.ParagraphTitle>
-                      <Text.Tertiary style={{ fontWeight: "800", marginBottom: 11 }}>
+                      <Text.ParagraphTitle>{chapter.sceneTitle}</Text.ParagraphTitle>
+                      {/* <Text.Tertiary style={{ fontWeight: "800", marginBottom: 11 }}>
                         {scene.image}
-                      </Text.Tertiary>
+                      </Text.Tertiary> */}
                     </View>
                     <View style={styles.btnLeft}>
                       <MaterialIcons
@@ -197,19 +237,20 @@ const BookActScreen: NavStatelessComponent = () => {
                     </View>
                   </View>
                   <Text.Tertiary style={{ color: Colors.white, marginBottom: 11 }}>
-                    {scene.desc}
+                    {chapter.sceneDescription}
                   </Text.Tertiary>
-                  {scene.avatars.length > 0 ? (
+                  <Text.Tertiary numberOfLines={1} ellipsizeMode='tail' style={{ color: '#fff' }}>{chapter.actors.map(item => item.heroName).toString()}</Text.Tertiary>
+                  {/* {chapter.actors.length > 0 ? (
                     <View style={styles.avatars}>
-                      {scene.avatars.map((avatar, avatar_index) => (
+                      {chapter.actors.map((avatar, avatar_index) => (
                         <Image
-                          source={imagePath[avatar.imgName]}
+                          source={{ uri: avatar.actorImage }}
                           style={styles.avatar}
                           key={avatar_index}
                         />
                       ))}
                     </View>
-                  ) : null}
+                  ) : null} */}
                 </View>
               </View>
             </TouchableOpacity>

@@ -118,31 +118,69 @@ const MovieListScreen: NavStatelessComponent = () => {
   });
 
   useEffect(() => {
-    movieDetails()
-  }, [])
+    movieDetails();
+    navigation.addListener("focus", () => {
+      movieDetails();
+    });
+  }, []);
+
+  const searchText = (e) => {
+    let text = e.toLowerCase();
+    let trucks = movieData;
+    let filteredName = trucks.filter((item) => {
+      return !item.title || item.title === "" ? null : item.title.toLowerCase().match(text);
+    });
+    if (!text || text === "") {
+      movieDetails();
+    } else if (!Array.isArray(filteredName) && !filteredName.length) {
+      console.log("no data");
+    } else if (Array.isArray(filteredName)) {
+      setMovieData(filteredName);
+    }
+  };
 
   //get movie
   const movieDetails = async () => {
-    const token = await AsyncStorage.getItem('authToken')
+    const token = await AsyncStorage.getItem("authToken");
 
-    fetch(BaseURl + 'movies/movieDetails', {
-      method: 'get',
+    fetch(BaseURl + "movies/movieDetails", {
+      method: "get",
       headers: {
-        "Authorization": `Bearer ${token}`,
-      }
+        Authorization: `Bearer ${token}`,
+      },
     })
       .then((response) => response.json())
       .then((responseJson) => {
-        console.log(responseJson)
+        console.log(responseJson, "-----backend");
         if (responseJson.code === 200) {
-          setActorData(responseJson.data.actors)
-          setMovieData(responseJson.data)
+          setActorData(responseJson.data.actors);
+          setMovieData(responseJson.data);
         }
       })
       .catch((error) => {
-        console.log(error)
-      })
-  }
+        console.log(error);
+      });
+  };
+
+  // const searchText = value => {
+  //   let text = value.toLowerCase();
+  //   let trucks = UserData;
+  //   let filteredName = trucks.filter(item => {
+  //     return !item.name || item.name === ''
+  //       ? null
+  //       : item.name.toLowerCase().match(text);
+  //   });
+  //   if (!text || text === '' || text === null) {
+  //     setData();
+  //   } else if (!Array.isArray(filteredName) && !filteredName.length) {
+  //     console.log('=====no data=====');
+  //   } else if (Array.isArray(filteredName)) {
+  //     SetUserData(filteredName);
+  //   }
+  //  else if (Array.isArray(!filteredName)) {
+  //   console.log('=====no data=====');
+  // }
+  // };
 
   return (
     <ImageBackground source={imagePath["background"]} style={styles.imageBackground}>
@@ -183,9 +221,23 @@ const MovieListScreen: NavStatelessComponent = () => {
           })}
         >
           <TextInput
+            onKeyPress={({ nativeEvent }) => {
+              if (nativeEvent.key === "Backspace") {
+                //your code
+                // if you want to remove focus then you can use a ref
+
+                console.log("===presses===");
+              }
+            }}
             style={styles.searchBar}
             placeholder={"Search..."}
-            onChangeText={(search) => setSearch(search)}
+            onChangeText={(e) => {
+              searchText(e);
+              setSearch(e);
+              console.log(search);
+
+              // setSearch(search)
+            }}
             placeholderTextColor={Colors.white1}
           />
           <View style={styles.movieListContainer}>
@@ -194,19 +246,24 @@ const MovieListScreen: NavStatelessComponent = () => {
               <TouchableOpacity
                 style={styles.movieItem}
                 key={index}
-                onPress={() =>  navigator.openMovieDetail(
-                  { id: item._id}
-                )}
+                onPress={() => {
+                  navigator.openMovieDetail({ id: item._id });
+
+                  setTimeout(() => {
+                    console.log(item._id, "===id======");
+                  }, 2000);
+                }}
               >
                 <Image source={{ uri: item.movieBanner }} style={styles.thumbImage} />
                 <Text.ModalTitle style={{ lineHeight: 24, fontWeight: "700" }}>
                   {item.title}
                 </Text.ModalTitle>
                 <Text.Tertiary
-                  style={{ lineHeight: 24, fontWeight: "400", opacity: 0.8, textAlign: "center" }}
+                  numberOfLines={1}
+                  ellipsizeMode="tail"
+                  style={{ lineHeight: 24, fontWeight: "400", opacity: 0.8, textAlign: "left" }}
                 >
-                  {item.genres.map(genre => Object.keys(genre)+', ')}
-                  {/* {Object.keys(item.genres).toString().substring(0,22)} */}
+                  {item.genres.map((genre) => Object.keys(genre)).toString()}
                 </Text.Tertiary>
                 <LinearGradient
                   style={styles.movieRate}
@@ -214,7 +271,7 @@ const MovieListScreen: NavStatelessComponent = () => {
                   start={{ x: 0.0, y: 0.0 }}
                   end={{ x: 1.0, y: 0.0 }}
                 >
-                  <Text.Primary>{'20'}</Text.Primary>
+                  <Text.Primary>{"20"}</Text.Primary>
                   <Text.Primary
                     style={{
                       fontSize: 10,

@@ -17,6 +17,7 @@ interface Props {
   onPress?: (value: any) => void;
   onTouchStart?: (value: any) => void;
   editable?: boolean;
+  keyboardType?: string;
 }
 const Input: React.FC<Props> = ({
   value,
@@ -27,6 +28,7 @@ const Input: React.FC<Props> = ({
   editable,
   onFocus,
   onTouchStart,
+  keyboardType
 }) => {
   return (
     <View style={styles.container}>
@@ -41,6 +43,7 @@ const Input: React.FC<Props> = ({
         editable={editable == false ? false : true}
         onFocus={onFocus}
         onTouchStart={onTouchStart}
+        keyboardType={keyboardType}
       />
     </View>
   );

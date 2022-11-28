@@ -13,7 +13,7 @@ const styles = StyleSheet.create({
     display: "flex",
     flexDirection: "column",
     backgroundColor: Colors.transparent,
-    height: vh(100),
+    height: vh(95),
     paddingHorizontal: 16,
   },
   image: {

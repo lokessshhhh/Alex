@@ -20,48 +20,21 @@ import BaseURl from "constant/BaseURL";
 const MovieDetailScreen: NavStatelessComponent = () => {
   const navigation = useNavigation();
   const navigator = navigate(navigation);
-  const route = useRoute();
+  const route = useRoute<any>();
   const [movie, setMovie] = useState<any>([]);
+  const [screenPlay, setScreenPlay] = useState([]);
   const [spinner, setSpinner] = useState(false);
 
   useEffect(() => {
     getSignleMovie()
+    navigation.addListener('focus', () => {
+      getSignleMovie()
+    })
   }, [])
 
   useEffect(() => {
     console.log("--------------Movie ", movie);
   }, [movie])
-  const genres = [
-    { genre: "Comedy" },
-    { genre: "Sci-Fi" },
-    { genre: "Crime" },
-    { genre: "Action" },
-  ];
-  const dreamcasts = [
-    { castName: "Keanu Reeves", realName: "John Wick", avatar: "avatar3" },
-    { castName: "Laetitia Casta", realName: "Laetitia Casta", avatar: "avatar2" },
-    { castName: "Keanu Reeves", realName: "John Wick", avatar: "avatar3" },
-    { castName: "Laetitia Casta", realName: "Laetitia Casta", avatar: "avatar2" },
-    { castName: "Keanu Reeves", realName: "John Wick", avatar: "avatar3" },
-    { castName: "Laetitia Casta", realName: "Laetitia Casta", avatar: "avatar2" },
-  ];
-  const tags = [
-    { tag: "Comedy" },
-    { tag: "Cops" },
-    { tag: "Thriller" },
-    { tag: "Fantasy" },
-    { tag: "Action" },
-    { tag: "Romance" },
-  ];
-  const smiliarMovies = [
-    { title: "John Wick1", thumb: "similar1" },
-    { title: "John Wick2", thumb: "similar2" },
-    { title: "Speed", thumb: "similar3" },
-    { title: "Professional", thumb: "similar1" },
-    { title: "Speed", thumb: "similar3" },
-    { title: "Professional", thumb: "similar1" },
-  ];
-
 
   const getSignleMovie = async () => {
     setSpinner(true)
@@ -75,9 +48,10 @@ const MovieDetailScreen: NavStatelessComponent = () => {
       },
     })
       .then((resposeJson) => {
-        console.log("response data: ", resposeJson.data);
+        console.log("response data: ", resposeJson.data,'===Single movie end===');
         if (resposeJson.data.code === 200) {
           setMovie(resposeJson.data.data)
+          setScreenPlay(resposeJson.data.data.screenPlay)
           setSpinner(false)
         }
       })
@@ -95,7 +69,7 @@ const MovieDetailScreen: NavStatelessComponent = () => {
           <TouchableOpacity onPress={() => navigator.goBack()}>
             <MaterialIcons name="arrow-back" color={Colors.white} size={20} />
           </TouchableOpacity>
-          <View style={styles.rightActions}>
+          <View style={styles.rightActions} >
             <TouchableOpacity onPress={() =>
               navigator.openEditMovie(
                 { id: movie._id }
@@ -124,7 +98,11 @@ const MovieDetailScreen: NavStatelessComponent = () => {
             {movie.title}
           </Text.Primary>
           <TouchableOpacity onPress={() => navigator.openMoviePlay(
-            { id: movie._id }
+            {
+              id: movie._id,
+              screenPlay: screenPlay,
+              title: movie.title
+            }
           )}>
             <LinearGradient
               style={styles.screenPlay}
@@ -221,7 +199,6 @@ const MovieDetailScreen: NavStatelessComponent = () => {
               )) : null}
             </ScrollView>
           </View>
-
           <View style={[styles.contentItem, { marginBottom: 20 }]}>
             <Text.TagTitle style={{ fontSize: 22, marginBottom: 8 }}>
               {"Similar Movies"}

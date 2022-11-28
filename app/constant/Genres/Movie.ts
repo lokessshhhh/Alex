@@ -78,7 +78,7 @@ export const Movie = [
     },
     {
       name: "Experimental",
-      image: "genre_drama",
+      image: "genre_experimental",
       number: 0,
       subGenre: [
         "Surrealist",
@@ -99,7 +99,7 @@ export const Movie = [
     },
     {
       name: "Historical",
-      image: "genre_fantasy",
+      image: "genre_history",
       number: 0,
       subGenre: [
         "Historical Event",
@@ -129,7 +129,7 @@ export const Movie = [
     },
     {
       name: "Romance",
-      image: "genre_romance",
+      image: "genre_rommance",
       number: 0,
       subGenre: [
         "Romance Drama",
@@ -139,7 +139,7 @@ export const Movie = [
     },
     {
       name: "Science Fiction",
-      image: "genre_romance",
+      image: "genre_fiction",
       number: 0,
       subGenre: [
         "Post-Apocalyptic",
@@ -166,7 +166,7 @@ export const Movie = [
     },
     {
       name: "Western",
-      image: "genre_thriller",
+      image: "genre_western",
       number: 0,
       subGenre: [
         "Epic Western",

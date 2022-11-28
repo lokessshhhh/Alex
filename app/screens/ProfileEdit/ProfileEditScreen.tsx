@@ -1,11 +1,5 @@
 import React, { useEffect, useState } from "react";
-import {
-  ScrollView,
-  TouchableOpacity,
-  View,
-  Image,
-  Dimensions,
-} from "react-native";
+import { ScrollView, TouchableOpacity, View, Image, Dimensions } from "react-native";
 import AnimatedLoader from "react-native-animated-loader";
 import Modal from "react-native-modal";
 import { vw, vh } from "react-native-css-vh-vw";
@@ -40,11 +34,10 @@ import * as queries from "../../../src/graphql/queries";
 import * as mutations from "../../../src/graphql/mutations";
 import * as subscriptions from "../../../src/graphql/subscriptions";
 
-
-
 import BaseURl from "constant/BaseURL";
 
 const ProfileEditScreen: NavStatelessComponent = () => {
+  
   const navigation = useNavigation();
   const navigator = navigate(navigation);
   const deviceWidth = Dimensions.get("window").width;
@@ -74,69 +67,68 @@ const ProfileEditScreen: NavStatelessComponent = () => {
   //redux
   const { userInfo } = useSelector((state) => state.saveUserReducer);
 
-
   useEffect(() => {
-    userDetails()
-  }, [])
+    userDetails();
+  }, []);
 
   const userDetails = async () => {
-    const token = await AsyncStorage.getItem('authToken')
-    fetch(BaseURl + 'auth/userDetails', {
-      method: 'get',
+    const token = await AsyncStorage.getItem("authToken");
+    fetch(BaseURl + "auth/userDetails", {
+      method: "get",
       headers: {
-        "Authorization": `Bearer ${token}`,
-      }
+        Authorization: `Bearer ${token}`,
+      },
     })
       .then((response) => response.json())
       .then((responseJson) => {
-        console.log(responseJson)
+        console.log(responseJson,'======Res======');
         if (responseJson.code === 200) {
-          setEmail(responseJson.data.email)
-          setUserName(responseJson.data.name)
-          setUserLastName(responseJson.data.userName)
-          setUserProfile(responseJson.data.profileImage)
+          setEmail(responseJson.data.email);
+          setUserName(responseJson.data.name);
+          setUserLastName(responseJson.data.userName);
+          setUserProfile(responseJson.data.profileImage);
         }
       })
       .catch((error) => {
-        console.log(error)
-      })
-  }
+        console.log(error);
+      });
+  };
 
   //edit profile
   const editProfile = async () => {
-    const token = await AsyncStorage.getItem('authToken')
-    let filename = userProfile.split('/').pop();
-    var formData = new FormData()
-    formData.append('profileImage', {
+    const token = await AsyncStorage.getItem("authToken");
+    let filename = userProfile.split("/").pop();
+    var formData = new FormData();
+    formData.append("profileImage", {
       uri: userProfile,
       name: filename,
-      type: "image/jpeg"
+      type: "image/jpeg",
     });
-    formData.append('name', userName);
-    formData.append('userName', userLastName);
-    formData.append('currentPassword', oldPwd);
-    formData.append('newPassword', newPwd);
+    formData.append("name", userName);
+    formData.append("userName", userLastName);
+    formData.append("currentPassword", oldPwd);
+    formData.append("newPassword", newPwd);
     console.log(formData);
 
-    fetch(BaseURl + 'auth/editProfile', {
-      method: 'post',
+    fetch(BaseURl + "auth/editProfile", {
+      method: "post",
       headers: {
-        "Authorization": `Bearer ${token}`,
+        Authorization: `Bearer ${token}`,
       },
-      body: formData
+      body: formData,
     })
       .then((response) => response.json())
       .then((responseJson) => {
-        console.log("Response :", responseJson)
+        console.log("Response :", responseJson);
         if (responseJson.code === 200) {
-          alert(responseJson.message)
-          navigation.goBack()
+          alert(responseJson.message);
+          navigation.goBack();
         }
       })
       .catch((error) => {
-        console.log("Error :", error)
-      })
-  }
+        console.log("Error :", error);
+      });
+  };
   const onNewFocus = () => {
     if (oldPwd.length < 8) {
       showToast("Confirm your old Password", 0);
@@ -175,8 +167,8 @@ const ProfileEditScreen: NavStatelessComponent = () => {
 
     setImgChooseModal(false);
     // handleImagePicked(result);
-    console.log("resulltwdw", result)
-    setUserProfile(result.uri)
+    console.log("resulltwdw", result);
+    setUserProfile(result.uri);
   };
 
   const fromCamera = async () => {
@@ -215,7 +207,7 @@ const ProfileEditScreen: NavStatelessComponent = () => {
           position: "absolute",
           paddingHorizontal: 16,
           width: "100%",
-          marginTop: 60,
+          marginTop: 50,
         }}
       >
         <TouchableOpacity onPress={() => navigator.goBack()} style={[styles.goBack]}>
@@ -223,9 +215,11 @@ const ProfileEditScreen: NavStatelessComponent = () => {
         </TouchableOpacity>
         <Text.Header style={{ marginBottom: 26 }}>{"Edit Profile"}</Text.Header>
         <View style={styles.avatarEdit}>
-          {userProfile !== ""
-            ? <Image source={{ uri: userProfile }} style={styles.avatar} />
-            : <UserAvatar size={80} name={userInfo.preferred_username} style={styles.avatar} />}
+          {userProfile !== "" ? (
+            <Image source={{ uri:userProfile }} style={styles.avatar} />
+          ) : (
+            <UserAvatar size={80} name={userInfo.preferred_username} style={styles.avatar} />
+          )}
           <TouchableOpacity style={{ marginTop: -55 }} onPress={() => setImgChooseModal(true)}>
             <AntDesign name="camera" size={30} color={Colors.blue} />
           </TouchableOpacity>
@@ -242,9 +236,7 @@ const ProfileEditScreen: NavStatelessComponent = () => {
             onChangeText={(value) => setUserLastName(value)}
           />
 
-          <Input value={emailAdd} placeholder={"E-mail"}
-            editable={false}
-          />
+          <Input value={emailAdd} placeholder={"E-mail"} editable={false} />
           <Input
             value={oldPwd}
             placeholder={"Old Password"}
@@ -266,19 +258,23 @@ const ProfileEditScreen: NavStatelessComponent = () => {
             onFocus={() => onConfirmFocus()}
           />
         </View>
+        <View style={{ alignSelf: "center", width: "100%", paddingTop: 20 }}>
+          {/* <Button.Primary fullWidth={true} textType={"Primary"} onPress={() => saveProfile()}> */}
+          <Button.Primary
+            fullWidth={true}
+            textType={"Primary"}
+            onPress={() => {
+              // saveProfile()
+              editProfile();
+            }}
+          >
+            <Text.TagTitle style={{ textTransform: "none", lineHeight: 24 }}>
+              {"Save Profile"}
+            </Text.TagTitle>
+          </Button.Primary>
+        </View>
       </View>
-      <View style={{ position: "absolute", bottom: 30, paddingHorizontal: 16, width: "100%" }}>
-        {/* <Button.Primary fullWidth={true} textType={"Primary"} onPress={() => saveProfile()}> */}
-        <Button.Primary fullWidth={true} textType={"Primary"} onPress={() => {
-          // saveProfile()
-          editProfile()
-        }}>
 
-          <Text.TagTitle style={{ textTransform: "none", lineHeight: 24 }}>
-            {"Save Profile"}
-          </Text.TagTitle>
-        </Button.Primary>
-      </View>
       <AnimatedLoader
         visible={loading}
         overlayColor="rgba(255,255,255,0)"

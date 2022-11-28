@@ -19,8 +19,9 @@ import imagePath from "../../constant/imagePath";
 const BookDetailScreen: NavStatelessComponent = () => {
   const navigation = useNavigation();
   const navigator = navigate(navigation);
-  const route = useRoute();
+  const route = useRoute<any>();
   const [book, setBook] = useState<any>([]);
+  const [manuScript, setManuScript] = useState([]);
 
   const genres = [
     { genre: "Comedy" },
@@ -54,8 +55,10 @@ const BookDetailScreen: NavStatelessComponent = () => {
   ];
 
   useEffect(() => {
-    console.log(route.params.id);
     getSignleBook()
+    navigation.addListener('focus', () => {
+      getSignleBook()
+    })
   }, [])
 
   const getSignleBook = async () => {
@@ -72,6 +75,7 @@ const BookDetailScreen: NavStatelessComponent = () => {
         console.log("response data: ", resposeJson.data);
         if (resposeJson.code === 200) {
           setBook(resposeJson.data)
+          setManuScript(resposeJson.data.manuScript)
         }
       })
       .catch((err) => {
@@ -89,7 +93,7 @@ const BookDetailScreen: NavStatelessComponent = () => {
           </TouchableOpacity>
           <View style={styles.rightActions}>
             <TouchableOpacity onPress={() => navigator.openEditBook(
-              {id: book._id}
+              { id: book._id }
             )}>
               <Icon
                 name="Edit_white"
@@ -117,7 +121,13 @@ const BookDetailScreen: NavStatelessComponent = () => {
             </Text.Primary>
             <Text.Tertiary>{"6 Acts, 48 Chapters"}</Text.Tertiary>
           </View>
-          <TouchableOpacity onPress={() => navigator.openBookPlay()}>
+          <TouchableOpacity onPress={() => navigator.openBookPlay(
+            {
+              id: book._id,
+              manuScript: manuScript,
+              title: book.title
+            }
+          )}>
             <LinearGradient
               style={styles.screenPlay}
               colors={[Colors.GradLeft, Colors.GradRight]}

@@ -33,11 +33,15 @@ const buttonFactory: ButtonFactory = (type) => (props) => {
 
   const additionalStyle = {
     paddingVertical: PADDING_VERTICAL,
-    borderRadius: PADDING_VERTICAL * 2 + Font.FontSize[textType],
+    borderRadius: 20
+    // PADDING_VERTICAL * 2 + Font.FontSize[textType],
   };
   if (type === "Primary") {
     return (
-      <TouchableOpacity onPress={onPress} {...props} style={{ width: "100%" }}>
+      <TouchableOpacity 
+      
+      onPress={onPress} {...props} style={{ width: "100%" }}
+      >
         <LinearGradient
           colors={[Colors.GradLeft, Colors.GradRight]}
           start={{ x: 0.0, y: 0.0 }}

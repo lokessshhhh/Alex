@@ -42,6 +42,7 @@ interface TranslationKeys {
   UI_PRIVACY_POLICY_L: string;
   UI_SEE_FAQ_L: string;
   UI_FEEDBACK_L: string;
+  UI_WORK_INFO_L: string;
 
   //Language Page
   UI_ENGLISH_B: string;

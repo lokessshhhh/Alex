@@ -6,6 +6,8 @@ import {
   View,
   Image,
   Dimensions,
+  KeyboardAvoidingView,
+  Platform,
 } from "react-native";
 import { useNavigation, useRoute } from "@react-navigation/native";
 import { LinearGradient } from "expo-linear-gradient";
@@ -22,20 +24,22 @@ import Modal from "react-native-modal";
 import { vw, vh } from "react-native-css-vh-vw";
 import { Snackbar } from "react-native-paper";
 import AnimatedLoader from "react-native-animated-loader";
-import fetch from 'fetch'
+import fetch from "fetch";
 
 import { navigate } from "navigation";
 import { NavStatelessComponent } from "interfaces";
 import { Button, Icon, Input, Text } from "components";
 import { Colors } from "style";
 import { t } from "utils";
-import axios from 'axios'
+import axios from "axios";
 
 import navigationOptions from "./SignUpScreen.navigationOptions";
 import styles from "./SignUpScreen.styles";
 import imagePath from "../../constant/imagePath";
 import BaseURl from "constant/BaseURL";
 import { colors } from "react-native-elements";
+import { heightPercentageToDP } from "react-native-responsive-screen";
+import { useHeaderHeight } from "react-navigation/stack";
 const SignUpScreen: NavStatelessComponent = () => {
   const navigation = useNavigation();
   const navigator = navigate(navigation);
@@ -62,63 +66,85 @@ const SignUpScreen: NavStatelessComponent = () => {
   //   },
   // })
 
-  
+
+  const deleteUser = () => {
+    axios.post(BaseURl + 'auth/modelClose/' + email)
+    .then((response)=> {
+      console.log(response.data.message,'=res=');
+    })
+    .catch((err)=>{
+      console.log(err,'=errr=');
+    })
+  }
 
   const signUp = () => {
     if (checkValidation() == true) {
       setLoading(true);
-      console.log(BaseURl)
-      axios.post(BaseURl + 'auth/register',
-        {
+      console.log(BaseURl);
+      axios
+        .post(BaseURl + "auth/register", {
           email: email,
           userName: username,
-          password: password
-
+          password: password,
         })
         .then((response) => {
           setLoading(false);
           console.log("successful sign up!", response);
           showToast("Check your verficiation code in mailbox", 1);
-          setEma(email)
+          setEma(email);
           setModalConfirmCode(true);
         })
         .catch((err) => {
+          if (err.response.data.code === 409) {
+            showToast("Email Already Exists", 0);
+            setLoading(false);
+            return false;
+          }
           setLoading(false);
-          
-          console.log("error signing up!: ", err);
+          console.log("error signing up!: ", err.response.data);
         });
-
-
-
     }
   };
 
   const confirmSignUp = () => {
     if (confirmationCode.length != 4) {
-      showToast("Wrong Confirmation Code", 0);
+      showToast("Please Enter Valid Data", 0);
       return;
     }
     setLoading(true);
     const verifyData = {
-
       email: ema,
-      otp: confirmationCode
-    }
+      otp: confirmationCode,
+    };
 
     axios
       .post(BaseURl + "auth/verifyotp", verifyData)
       .then((response) => {
-        console.log("loginResponse------->", response);
-        setModalConfirmCode(false)
-        navigator.openSignIn()
-
-
+        if (response.data.code === 200) {
+          showToast("OTP Verified Succesfully!", 0);
+          alert("OTP Verified Succesfully!");
+          setLoading(false);
+          console.log("loginResponse------->", response.data);
+          setModalConfirmCode(false);
+          navigator.openSignIn();
+          return;
+        }
       })
       .catch((err) => {
-        console.log("err : ", err.response.data);
-
+        if (err) {
+          showToast(err.response.data.message, 0);
+          setLoading(false);
+          console.log("err : ", err.response.data);
+          return;
+        }
+        
+        // if (err.response.data.code === 400) {
+        //   showToast("Otp You Entered Is Wrong!", 0);
+        //   setLoading(false);
+        //   console.log("err : ", err.response.data);
+        //   return;
+        // }
       });
-
   };
 
   const showToast = (message: string, status: number) => {
@@ -165,7 +191,7 @@ const SignUpScreen: NavStatelessComponent = () => {
         return false;
       }
       if (confirmpwd != password) {
-        showToast("Confirm your password again", 0);
+        showToast("Password does not match", 0);
         return false;
       }
     }
@@ -179,43 +205,50 @@ const SignUpScreen: NavStatelessComponent = () => {
     <>
       <ScrollView style={styles.container}>
         <Image source={imagePath["background"]} style={styles.imageBackground} />
-        <View style={styles.logoContainer}>
+        <View style={[styles.logoContainer, { position: "absolute", top: vh(10) }]}>
           <Icon name="Logo" width="80" height="80" fill="none" />
           <Image source={imagePath["LogoText"]} style={styles.logoText} />
         </View>
         <View style={styles.bottomContainer}>
-          <Text.TagTitle style={styles.bottomLine1}>{"Create your Account"}</Text.TagTitle>
-          <Input
-            value={username}
-            placeholder={t("UI_USERNAME_I")}
-            onChangeText={(value) => {
-              setUsername(value);
-            }}
-          />
-          <Input
-            value={email}
-            placeholder={t("UI_EMAIL_I")}
-            onChangeText={(value) => {
-              setEmail(value);
-            }}
-          />
-          <Input
-            value={password}
-            placeholder={t("UI_PASSWORD_I")}
-            type="password"
-            onChangeText={(value) => {
-              setPassword(value);
-            }}
-          />
-          <Input
-            value={confirmpwd}
-            placeholder={t("UI_CONFIRM_PASSWORD_I")}
-            type="password"
-            onChangeText={(value) => {
-              setConfirmpwd(value);
-            }}
-          />
+          <KeyboardAvoidingView
+           
+            behavior={Platform.OS === "ios" ? "position" : null}
+            keyboardVerticalOffset={Platform.select({ ios: 400, android: 150 })}
+            enabled={true}
+          >
+            <Text.TagTitle style={styles.bottomLine1}>{"Create your Account"}</Text.TagTitle>
 
+            <Input
+              value={username}
+              placeholder={t("UI_USERNAME_I")}
+              onChangeText={(value) => {
+                setUsername(value);
+              }}
+            />
+            <Input
+              value={email}
+              placeholder={t("UI_EMAIL_I")}
+              onChangeText={(value) => {
+                setEmail(value);
+              }}
+            />
+            <Input
+              value={password}
+              placeholder={t("UI_PASSWORD_I")}
+              type="password"
+              onChangeText={(value) => {
+                setPassword(value);
+              }}
+            />
+            <Input
+              value={confirmpwd}
+              placeholder={t("UI_CONFIRM_PASSWORD_I")}
+              type="password"
+              onChangeText={(value) => {
+                setConfirmpwd(value);
+              }}
+            />
+          </KeyboardAvoidingView>
           <Button.Primary
             fullWidth={true}
             textType={"Primary"}
@@ -277,9 +310,18 @@ const SignUpScreen: NavStatelessComponent = () => {
       <Modal
         isVisible={modalConfirmCode}
         swipeDirection="down"
-        onSwipeComplete={() => setModalConfirmCode(false)}
-        onRequestClose={() => setModalConfirmCode(false)}
-        onBackdropPress={() => setModalConfirmCode(false)}
+        onSwipeComplete={() => {
+          setModalConfirmCode(false),
+          deleteUser();
+        }}
+        onRequestClose={() => {
+          setModalConfirmCode(false),
+          deleteUser();
+        }}
+        onBackdropPress={() => {
+          setModalConfirmCode(false),
+          deleteUser();
+        }}
         deviceWidth={deviceWidth}
         style={{ width: "100%", marginLeft: 0, marginBottom: -50 }}
       >

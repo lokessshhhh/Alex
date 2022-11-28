@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   ScrollView,
   TouchableOpacity,
@@ -11,6 +11,7 @@ import {
 import { useNavigation } from "@react-navigation/native";
 import { Ionicons } from "@expo/vector-icons";
 import { indexOf } from "ramda";
+import Linking from "expo-linking";
 
 import { navigate } from "navigation";
 import { NavStatelessComponent } from "interfaces";
@@ -28,7 +29,8 @@ const GuideScreen: NavStatelessComponent = () => {
 
   const { width, height } = Dimensions.get("window");
   const [sliderState, setSliderState] = useState({ currentPage: 0 });
-
+  const [data,setData] = useState(null)
+  
   const setSliderPage = (event: any) => {
     const { currentPage } = sliderState;
     const { x } = event.nativeEvent.contentOffset;

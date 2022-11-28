@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import {
   ImageBackground,
   ScrollView,
@@ -10,6 +10,7 @@ import {
   Keyboard,
   Dimensions,
   Alert,
+  AppState,
 } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import { LinearGradient } from "expo-linear-gradient";
@@ -31,9 +32,10 @@ import styles from "./SignInScreen.styles";
 import { signIn } from "../../redux/actions";
 import BaseURl from "constant/BaseURL";
 import axios from "axios";
-import { baseProps } from "react-native-gesture-handler/lib/typescript/handlers/gestureHandlers";
+// import { baseProps } from "react-native-gesture-handler/lib/typescript/handlers/gestureHandlers";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-
+import { count } from "console";
+import { values } from "ramda";
 
 const SignInScreen: NavStatelessComponent = () => {
   const navigation = useNavigation();
@@ -47,8 +49,13 @@ const SignInScreen: NavStatelessComponent = () => {
   const [snackBarVisiable, setSnackBarVisible] = React.useState(false);
   const [message, setMessage] = React.useState("");
   const [messageStatus, setMessageStatus] = React.useState(1); // status 1: success, status 0: error
-
+  const [Counter, SetCounter] = React.useState(false);
   const [loading, setLoading] = React.useState(false);
+  const [activeTimerId, SetactiveTimerId] = React.useState(null);
+  const [activeSeconds, SetactiveSeconds] = React.useState(0);
+  const [inactiveTimerId, SetinactiveTimerId] = React.useState(null);
+  const [inactiveSeconds, SetinactiveSeconds] = React.useState(0);
+  const [Count, setCount] = React.useState(0);
 
   const showToast = (message: string, status: number) => {
     setMessage(message);
@@ -56,9 +63,77 @@ const SignInScreen: NavStatelessComponent = () => {
     setSnackBarVisible(true);
     setTimeout(() => setSnackBarVisible(false), 2000);
   };
-  useEffect(() => {
 
-  }, [])
+  const [appState, setAppState] = useState(AppState.currentState);
+
+  const [seconds, setSeconds] = useState(0);
+  const [minutes, setminutes] = useState("");
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setSeconds((seconds) => seconds + 1 / 10);
+    }, 6000);
+    return () => clearInterval(interval);
+  }, [seconds]);
+
+  useEffect(() => {
+    const Myinterval = setTimeout(() => {
+      let Mytime = seconds.toString();
+      setminutes(Mytime);
+      // console.log("ActualMinutes:", minutes);
+      AsyncStorage.setItem("Timer", minutes)
+        .then(() => {})
+        .catch((error) => {
+          console.log(error);
+        });
+    }, 1000);
+    return () => clearInterval(Myinterval);
+  }, [seconds, minutes]);
+
+  useEffect(() => {
+    AppState.addEventListener("change", MyAppState);
+    return () => {
+      AppState.removeEventListener("change", MyAppState);
+    };
+  }, []);
+
+  const SetData = async (FinalTime, userId) => {
+    console.log(FinalTime, "MyFinaTime");
+    console.log(userId, "UserId");
+    let data = {
+      userId: userId,
+      time: FinalTime,
+    };
+    console.log(data);
+    await axios
+      .post(BaseURl + "timetracking/time", data)
+      .then((response) => {
+        console.log(response.data, "Response Data");
+        console.log(response.data.message, "responce message");
+      })
+      .catch((error) => {
+        console.log(error, "There is an error");
+      });
+  };
+
+  const MyAppState = async (nextAppState) => {
+    if (appState.match(/inactive|background/) && nextAppState === "active") {
+    } else {
+      setSeconds(0);
+      console.log("AppState:", nextAppState);
+      if (nextAppState === "active") {
+        // .then(value => {console.log(value,'=====MyFinalTime=====')
+      } else if (nextAppState === "inactive" || nextAppState === "background") {
+        let id = await AsyncStorage.getItem("userId");
+        await AsyncStorage.getItem("Timer").then((value) => {
+          console.log(value, "ValueFinal");
+          console.log(value, "NotMuch");
+          SetData(value, id);
+        });
+      }
+    }
+    setAppState({ appState: nextAppState });
+  };
 
   const checkValidation = () => {
     if (!email || !validateEmail(email)) {
@@ -104,29 +179,31 @@ const SignInScreen: NavStatelessComponent = () => {
     setLoading(true);
     const loginData = {
       email: email,
-      password: password
-    }
-    axios
+      password: password,
+    };
+    await axios
       .post(BaseURl + "auth/login", loginData)
       .then((response) => {
         setLoading(false);
         console.log("loginToken", response.data);
         if (response.status === 200) {
           const storeToken = async () => {
-            await AsyncStorage.setItem('authToken', response.data.user.loginToken);
-          }
-          storeToken()
-          alert(response.data.message)
-          navigator.openMainPage()
-        }
-        else {
-          alert("User Not Found!")
+            await AsyncStorage.setItem("authToken", response.data.user.loginToken);
+            await AsyncStorage.setItem("userId", response.data.user._id);
+          };
+
+          storeToken();
+          alert(response.data.message);
+          navigator.openMainPage();
+          MyAppState();
+        } else {
+          alert("User Not Found!");
         }
       })
       .catch((err) => {
-        alert("User Not Found!")
+        alert("User Not Found!");
         setLoading(false);
-        console.log("error please try again", err)
+        console.log("error please try again", err);
       });
   };
 
@@ -138,22 +215,31 @@ const SignInScreen: NavStatelessComponent = () => {
         <Image source={imagePath["LogoText"]} style={styles.logoText} />
       </View>
       <View style={styles.bottomContainer}>
-        <Text.TagTitle style={styles.bottomLine1}>{t("UI_SIGN_INTO_YOUR_ACCOUNT_L")}</Text.TagTitle>
-        <Input
-          value={email}
-          placeholder={t("UI_EMAIL_I")}
-          onChangeText={(value) => {
-            setEmail(value);
-          }}
-        />
-        <Input
-          value={password}
-          placeholder={t("UI_PASSWORD_I")}
-          type="password"
-          onChangeText={(value) => {
-            setPassword(value);
-          }}
-        />
+     
+          <Text.TagTitle style={styles.bottomLine1}>
+            {t("UI_SIGN_INTO_YOUR_ACCOUNT_L")}
+          </Text.TagTitle>
+          <KeyboardAvoidingView
+           behavior={Platform.OS === "ios" ? "position" : null}
+           keyboardVerticalOffset={Platform.select({ ios: 450, android: 150 })}
+           enabled={true}
+        >
+          <Input
+            value={email}
+            placeholder={t("UI_EMAIL_I")}
+            onChangeText={(value) => {
+              setEmail(value);
+            }}
+          />
+          <Input
+            value={password}
+            placeholder={t("UI_PASSWORD_I")}
+            type="password"
+            onChangeText={(value) => {
+              setPassword(value);
+            }}
+          />
+        </KeyboardAvoidingView>
 
         <TouchableOpacity
           onPress={() => navigator.openForgotPwd()}
@@ -164,7 +250,12 @@ const SignInScreen: NavStatelessComponent = () => {
         <Button.Primary
           fullWidth={true}
           textType={"Primary"}
-          onPress={() => signInClick()}
+          onPress={() => {
+            // navigator.trackingScreen();
+            signInClick();
+            // navigator.openMainPage();
+
+          }}
           style={{ marginBottom: 24 }}
         >
           <Text.TagTitle style={{ textTransform: "none", lineHeight: 24 }}>

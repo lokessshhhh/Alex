@@ -77,7 +77,7 @@ export const Book = [
     },
     {
       name: "Romance",
-      image: "genre_romance",
+      image: "genre_rommance",
       number: 10,
       subGenre: [
         "Billionaires",
@@ -101,7 +101,7 @@ export const Book = [
     },
     {
       name: "Science Fictio",
-      image: "genre_fantasy",
+      image: "genre_fiction",
       number: 10,
       subGenre: [
         "Aliens",

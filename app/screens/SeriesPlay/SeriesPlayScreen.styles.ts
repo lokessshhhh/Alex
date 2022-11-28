@@ -4,7 +4,8 @@ import { fonts } from "react-native-elements/dist/config";
 import { white } from "react-native-paper/lib/typescript/styles/colors";
 import { vw, vh } from "react-native-css-vh-vw";
 
-import { Colors, Font, Layout } from "style";
+import { Colors, Font } from "style";
+import { Layout } from "constant";
 
 const styles = StyleSheet.create({
   container: {
@@ -68,6 +69,27 @@ const styles = StyleSheet.create({
     display: "flex",
     flexDirection: "row",
     width: vw(100) - 32,
+  },
+  input: {
+    paddingHorizontal: Layout.PADDING_HORIZONTAL,
+    height: 44,
+    borderWidth: 0,
+    borderRadius: 8,
+    color: Colors.white,
+    backgroundColor: Colors.inputBack,
+    marginBottom: 25,
+    letterSpacing: 0.66,
+    width: '100%'
+  },
+  modalContainer: {
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "center",
+    backgroundColor: "#12061E",
+    borderTopRightRadius: 16,
+    borderTopLeftRadius: 16,
+    paddingHorizontal: 16,
+    paddingBottom: 40,
   },
 });
 

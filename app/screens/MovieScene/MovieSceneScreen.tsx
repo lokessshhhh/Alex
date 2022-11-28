@@ -1,8 +1,8 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { ScrollView, View, Image, TouchableOpacity, TextInput, Dimensions } from "react-native";
 import Modal from "react-native-modal";
 import { useNavigation, useRoute } from "@react-navigation/native";
-import { Snackbar } from "react-native-paper";
+import Toast from 'react-native-root-toast';
 import {
   MaterialIcons,
   MaterialCommunityIcons,
@@ -15,6 +15,7 @@ import { vw, vh } from "react-native-css-vh-vw";
 import { GradientCircularProgress } from "react-native-circular-gradient-progress";
 import * as ImagePicker from "expo-image-picker";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import axios from "axios";
 
 import { navigate } from "navigation";
 import { NavStatelessComponent } from "interfaces";
@@ -30,7 +31,7 @@ import imagePath from "../../constant/imagePath";
 const MovieSceneScreen: NavStatelessComponent = () => {
   const navigation = useNavigation();
   const navigator = navigate(navigation);
-  const route = useRoute();
+  const route = useRoute<any>();
   const deviceWidth = Dimensions.get("window").width;
 
   const [modalRemoveHero, setModalRemoveHero] = React.useState(false);
@@ -46,31 +47,19 @@ const MovieSceneScreen: NavStatelessComponent = () => {
   const [actorData, setActorData] = React.useState([]);
   const [actorIndex, setActorIndex] = React.useState([]);
   const [selectedActor, setSelectedActor] = React.useState([]);
+  const [actorURL, setActorURL] = React.useState([]);
   const [actorDataList, setActorDataList] = React.useState<any>();
+  //
+  const [sceneName, setSceneName] = React.useState("");
+  const [sceneDesc, setSceneDesc] = React.useState("");
 
-  const heros = [
-    {
-      name: "John Wick",
-      actorName: "Keanu Reeves",
-      desc: "Ex killer, suffering after his daughter dies.",
-      avatar: "avatar3",
-      active: true,
-    },
-    {
-      name: "Jessica Jones",
-      actorName: "Laetitia Casta",
-      desc: "Ex killer’s wife, suffering after his daughter dies.",
-      avatar: "avatar2",
-      active: false,
-    },
-    {
-      name: "Elizabet Watson",
-      actorName: "Margot Robbie",
-      desc: "Ex killer’s wife, suffering after his daughter dies.",
-      avatar: "avatar4",
-      active: false,
-    },
-  ];
+
+  useEffect(() => {
+    console.log(route);
+    setSceneName(route.params.sceneName)
+    setSceneDesc(route.params.sceneDesc)
+    setSelectedActor(route.params.actors)
+  }, [])
 
   const saveScene = () => {
     setModalConfirmSave(false);
@@ -112,6 +101,7 @@ const MovieSceneScreen: NavStatelessComponent = () => {
           setActorName("")
           setActorDescription("")
           setHeroName("")
+          setActorImage("")
           setModalNewActor(false)
         } else {
           alert(responseJson.message)
@@ -140,6 +130,19 @@ const MovieSceneScreen: NavStatelessComponent = () => {
     }
   }
 
+  const saveActorsURL = () => {
+    setModalHero(false)
+    let data = []
+    console.log(selectedActor)
+    selectedActor.map(item => {
+      data.push(item)
+      if (actorURL.length === 0) { setActorURL(data) }
+      else { setActorURL(prevState => [...prevState, item]) }
+    })
+    console.log(data)
+
+  }
+
   const pickMovieBanner = async () => {
     let result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.All,
@@ -155,17 +158,24 @@ const MovieSceneScreen: NavStatelessComponent = () => {
     const token = await AsyncStorage.getItem('authToken')
     const data = {
       movieId: route.params.id,
-      screenPlay:[{ "name": "Acto01", "scenes": [{ "name": "Scenes", "description": "Hello How Are YOu!", "actorsURL": [{ "profileUrl": "Image1" }, { "profileUrl": "Image2" }] }] }]
+      actId: route.params.actId,
+      sceneId: route.params.sceneId,
+      sceneName: sceneName,
+      sceneDescription: sceneDesc,
+      actors: selectedActor
     }
-    fetch(BaseURl + '/movies/screenPlay', {
-      method: 'post',
+    console.log(data)
+    axios.post(BaseURl + 'movies/editScene', data, {
       headers: {
         "Authorization": `Bearer ${token}`,
-      }
+      },
     })
-      .then((response) => response.json())
       .then((resposeJson) => {
         console.log("response data: ", resposeJson.data);
+        if (resposeJson.data.code === 200) {
+          Toast.show(resposeJson.data.message, { duration: Toast.durations.LONG, })
+          navigator.goBack()
+        }
       })
       .catch((err) => {
         console.log(err);
@@ -176,11 +186,11 @@ const MovieSceneScreen: NavStatelessComponent = () => {
     <View style={{ backgroundColor: Colors.GradTop, height: vh(100) }}>
       <View style={styles.container}>
         <View style={styles.header}>
-          <TouchableOpacity onPress={() => setModalConfirmSave(true)}>
+          <TouchableOpacity onPress={() => setModalConfirmSave(true)}> 
             <MaterialIcons name="arrow-back" color={Colors.blue} size={20} />
           </TouchableOpacity>
           <View style={styles.headerTextGroup}>
-            <Text.Header>{"Scene 1"}</Text.Header>
+            <Text.Header>{route.params.sceneName}</Text.Header>
           </View>
         </View>
         <View style={styles.info}>
@@ -191,11 +201,13 @@ const MovieSceneScreen: NavStatelessComponent = () => {
             }
           </Text.Tertiary>
         </View>
-        <Input value={""} placeholder={"Scene Title"} />
+        <Input value={sceneName} onChangeText={(text) => setSceneName(text)} placeholder={"Scene Title"} />
         <TextInput
-          value={
-            "Watch Molly's Game yesterday, good movie, just a little too long for me Kevin Costner was excellent, as per usual."
-          }
+          // value={
+          //   "Watch Molly's Game yesterday, good movie, just a little too long for me Kevin Costner was excellent, as per usual."
+          // }
+          value={sceneDesc}
+          onChangeText={(text) => setSceneDesc(text)}
           placeholder={"Enter your text here"}
           placeholderTextColor={Colors.white1}
           style={{
@@ -211,7 +223,10 @@ const MovieSceneScreen: NavStatelessComponent = () => {
           multiline={true}
         />
         <View style={styles.avatarGroup}>
-          <TouchableOpacity style={styles.circleBtn} onPress={() => setModalHero(true)}>
+          <TouchableOpacity style={styles.circleBtn} onPress={() => {
+            setActorURL([])
+            setModalHero(true)
+          }}>
             <MaterialCommunityIcons
               name="plus"
               size={24}
@@ -247,7 +262,7 @@ const MovieSceneScreen: NavStatelessComponent = () => {
 
         <View style={{ position: "absolute", bottom: 50, marginHorizontal: 16, width: "100%" }}>
           <Button.Primary
-            onPress={() => navigator.goBack()}
+            onPress={() => saveScreenPlay()}
             textType={"Primary"}
             style={{ alignItems: "center", height: 48 }}
           >
@@ -372,7 +387,7 @@ const MovieSceneScreen: NavStatelessComponent = () => {
           >
             <View style={{ width: (vw(100) - 64) / 2 - 8, marginRight: 16 }}>
               <Button.Primary
-                onPress={() => saveScene()}
+                onPress={() => saveScreenPlay()}
                 textType={"Primary"}
                 style={{ alignItems: "center", height: 40, paddingVertical: 12 }}
               >
@@ -382,7 +397,10 @@ const MovieSceneScreen: NavStatelessComponent = () => {
 
             <View style={{ width: (vw(100) - 64) / 2 - 8 }}>
               <Button.Black
-                onPress={() => setModalConfirmSave(false)}
+                onPress={() => {
+                  setModalConfirmSave(false)
+                  navigator.goBack()
+                }}
                 textType={"Primary"}
                 style={{
                   alignItems: "center",
@@ -465,10 +483,7 @@ const MovieSceneScreen: NavStatelessComponent = () => {
             )) : null}
           </ScrollView>
           <Button.Primary
-            onPress={() => {
-              console.log(selectedActor)
-              setModalHero(false)
-            }}
+            onPress={() => saveActorsURL()}
             textType={"Primary"}
             style={{ alignItems: "center" }}
           >

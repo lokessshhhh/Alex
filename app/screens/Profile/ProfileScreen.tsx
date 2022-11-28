@@ -8,6 +8,7 @@ import {
   KeyboardAvoidingView,
   Platform,
   Keyboard,
+  Linking,
 } from "react-native";
 import AnimatedLoader from "react-native-animated-loader";
 import { useIsFocused, useNavigation } from "@react-navigation/native";
@@ -40,22 +41,31 @@ const ProfileScreen: NavStatelessComponent = () => {
   const navigator = navigate(navigation);
   const [isOnNotification, setIsOnNotification] = useState(true);
   const [loading, setLoading] = React.useState(false);
-
   //main states
   const [userName, setUserName] = useState<string>("");
   const [registeredInfo, setRegisteredInfo] = useState(null);
   const [avatar, setAvatar] = useState(null);
 
+  // New User Details
+
+  const [UserData, SetUserData] = useState([""]);
+
   const { userInfo } = useSelector((state) => state.saveUserReducer);
   const { language } = useSelector((state) => state.setLanguageReducer);
   const isFocused = useIsFocused();
+
   useEffect(() => {
+    GetUser();
+    console.log("called=====");
+
     (async () => {
       const user = await getUserByMail();
       if (!user) {
         //not registered yet to db
         setUserName(userInfo.preferred_username ? userInfo.preferred_username : userInfo.name);
       } else {
+        console.log(user, "=====user===");
+
         setRegisteredInfo(user);
         if (user.avatar != null) {
           setAvatar(user.avatar);
@@ -87,10 +97,27 @@ const ProfileScreen: NavStatelessComponent = () => {
     }
   };
 
-
   const signOut = () => {
     Auth.signOut();
     setLoading(true);
+  };
+
+  const GetUser = async () => {
+    const token = await AsyncStorage.getItem("authToken");
+
+    axios
+      .get(BaseURl + "auth/userDetails", {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      })
+      .then((response) => {
+        console.log(response.data.data, "===res===");
+        SetUserData(response.data.data);
+      })
+      .catch((error) => {
+        console.log(error, "===err===");
+      });
   };
 
   Hub.listen("auth", async (data) => {
@@ -140,13 +167,15 @@ const ProfileScreen: NavStatelessComponent = () => {
             </View>
           </View>
           <View style={styles.avatarName}>
-            {avatar != null && <Image source={{ uri: avatar }} style={styles.avatar} />}
+            {UserData != null && (
+              <Image source={{ uri: UserData.profileImage }} style={styles.avatar} />
+            )}
 
-            {avatar == null &&
-              userInfo.email.search("@gmail") != -1 && ( // if mail is gmail returns gravatar
+            {UserData == null &&
+              UserData.email.search("@gmail") != -1 && ( // if mail is gmail returns gravatar
                 <Gravatar
                   options={{
-                    email: userInfo.email,
+                    email: UserData.email,
                     parameters: { size: "200", d: "mm" },
                     secure: true,
                   }}
@@ -159,16 +188,19 @@ const ProfileScreen: NavStatelessComponent = () => {
                   }}
                 />
               )}
-            {avatar == null && userInfo.email.search("@gmail") == -1 && (
+            {UserData == null && UserData.email.search("@gmail") == -1 && (
               <UserAvatar
+                src={UserData.profileImage}
                 size={80}
-                name={userInfo.preferred_username}
+                name={UserData.userName}
                 style={{ marginRight: 16 }}
               />
             )}
 
             <View style={styles.nameMail}>
-              <Text.TagTitle style={{ fontSize: 22, marginBottom: 8 }}>{userName}</Text.TagTitle>
+              <Text.TagTitle style={{ fontSize: 22, marginBottom: 8 }}>
+                {UserData.name}
+              </Text.TagTitle>
               <Text.Tertiary>{userInfo.email}</Text.Tertiary>
             </View>
           </View>
@@ -286,11 +318,11 @@ const ProfileScreen: NavStatelessComponent = () => {
               </TouchableOpacity>
             </View>
           </View>
-          {/* <View style={styles.avatarName}> */}
-          {/* {userInfo.email.search("@gmail") != -1 ? ( // if mail is gmail returns gravatar
+          <View style={styles.avatarName}>
+            {UserData.email && UserData.profileImage === '' ? ( // if mail is gmail returns gravatar
               <Gravatar
                 options={{
-                  email: userInfo.email,
+                  email: UserData.email,
                   parameters: { size: "200", d: "mm" },
                   secure: true,
                 }}
@@ -303,27 +335,33 @@ const ProfileScreen: NavStatelessComponent = () => {
                 }}
               />
             ) : (
-              <UserAvatar
-                size={80}
-                name={userInfo.preferred_username}
-                style={{ marginRight: 16 }}
-              />
+              <UserAvatar 
+              src={UserData.profileImage}
+              size={80} 
+              name={UserData.userName} 
+              style={{ marginRight: 16 }} />
             )}
 
             <View style={styles.nameMail}>
-              <Text.TagTitle style={{ fontSize: 22, marginBottom: 8 }}>{userName}</Text.TagTitle>
-              <Text.Tertiary>{userInfo.email}</Text.Tertiary>
-            </View> */}
-          {/* </View> */}
+              <Text.TagTitle style={{ fontSize: 22, marginBottom: 8, color: "white" }}>
+                {UserData.name}
+              </Text.TagTitle>
+              <Text.Tertiary style={{ color: "white" }}>{UserData.email}</Text.Tertiary>
+            </View>
+          </View>
           <View style={styles.navigators}>
             <TouchableOpacity
               style={styles.navigationBtn}
-              onPress={() => navigator.openLanguageSetting()}
+              onPress={() => {
+                navigator.openLanguageSetting();
+              }}
             >
               <View style={styles.buttonContainer}>
                 <Text.Primary>{t("UI_LANGUAGE_L")}</Text.Primary>
                 <View style={styles.btnLeft}>
-                  <Text.Primary style={{ marginRight: 16 }}>{"English"}</Text.Primary>
+                  <Text.Primary style={{ marginRight: 16 }}>
+                    {renderLanguage(language)}
+                  </Text.Primary>
                   <MaterialIcons
                     name="arrow-forward-ios"
                     style={{ textAlignVertical: "center" }}
@@ -371,7 +409,15 @@ const ProfileScreen: NavStatelessComponent = () => {
               </View>
             </TouchableOpacity>
 
-            <TouchableOpacity style={styles.navigationBtn}>
+            <TouchableOpacity
+              onPress={() => {
+                Linking.openURL(
+                  "https://www.facebook.com/campaign/landing.php?campaign_id=14884913640&extra_1=s%7Cc%7C589460569891%7Cb%7Cfacebook%20signin%7C&placement=&creative=589460569891&keyword=facebook%20signin&partner_id=googlesem&extra_2=campaignid%3D14884913640%26adgroupid%3D128696221832%26matchtype%3Db%26network%3Dg%26source%3Dnotmobile%26search_or_content%3Ds%26device%3Dc%26devicemodel%3D%26adposition%3D%26target%3D%26targetid%3Dkwd-3821998899%26loc_physical_ms%3D9062191%26loc_interest_ms%3D%26feeditemid%3D%26param1%3D%26param2%3D&gclid=Cj0KCQiA37KbBhDgARIsAIzce17SeWpnrYAwiQeFeMJQvkDYD8Y5f815QIOgg96S7f4guukQ1Ff_bcMaAv9qEALw_wcB"
+                );
+                // alert("Webview");
+              }}
+              style={styles.navigationBtn}
+            >
               <View style={styles.buttonContainer}>
                 <Text.Primary>{"See FAQ"}</Text.Primary>
                 <View style={styles.btnLeft}>
@@ -388,6 +434,23 @@ const ProfileScreen: NavStatelessComponent = () => {
             <TouchableOpacity style={styles.navigationBtn} onPress={() => navigator.openFeedback()}>
               <View style={styles.buttonContainer}>
                 <Text.Primary>{t("UI_FEEDBACK_L")}</Text.Primary>
+                <View style={styles.btnLeft}>
+                  <MaterialIcons
+                    name="arrow-forward-ios"
+                    style={{ textAlignVertical: "center" }}
+                    color={Colors.white}
+                    size={14}
+                  />
+                </View>
+              </View>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.navigationBtn}
+              onPress={() => navigator.trackingScreen()}
+            >
+              <View style={styles.buttonContainer}>
+                <Text.Primary>{t("UI_WORK_INFO_L")}</Text.Primary>
                 <View style={styles.btnLeft}>
                   <MaterialIcons
                     name="arrow-forward-ios"

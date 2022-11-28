@@ -5,12 +5,11 @@ import { Colors, Font, Layout } from "style";
 
 const styles = StyleSheet.create({
   imageBackground: {
-    height: vh(100),
     width: vw(100)
   },
   container: {
-    flex:1
-    // height: vh(100),
+    flex:1,
+    // height:vh(100)
   },
   logoContainer: {
     position: "absolute",
@@ -28,7 +27,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
   },
   bottomLine1: {
-    marginBottom: 24,
+    marginBottom: 50,
     textAlign: "center",
   },
   transparentBtn: {

@@ -22,6 +22,7 @@ import {
 import { vw, vh } from "react-native-css-vh-vw";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as ImagePicker from "expo-image-picker";
+import Toast from 'react-native-root-toast';
 
 import { navigate } from "navigation";
 import { NavStatelessComponent } from "interfaces";
@@ -38,7 +39,7 @@ import { text } from "@storybook/addon-knobs";
 const MovieEditScreen: NavStatelessComponent = () => {
   const navigation = useNavigation();
   const navigator = navigate(navigation);
-  const route = useRoute();
+  const route = useRoute<any>();
   const deviceWidth = Dimensions.get("window").width;
   // ModalVisible States
   const [modalCategory, setModalCategory] = React.useState(false);
@@ -74,12 +75,13 @@ const MovieEditScreen: NavStatelessComponent = () => {
   const [action, setAction] = React.useState("");
   const [antagonist, setAntagonist] = React.useState("");
   const [logLineData, setLogLineData] = React.useState<any>();
+  const [oldlogLineData, setOldLogLineData] = React.useState<any>();
   //genre
   const [subGenre, setSubGenre] = React.useState([]);
   const [genreIndex, setGenreIndex] = React.useState([]);
   const [selectedSubGenre, setSelectedSubGenre] = React.useState([]);
   const [singleGenre, setSingleGenre] = React.useState<any>();
-  const [genreData, setGenreData] = React.useState<any>();
+  const [genreData, setGenreData] = React.useState([]);
   //tags
   const [tag, setTag] = React.useState("");
   const [tagData, setTagData] = React.useState<any>();
@@ -92,61 +94,14 @@ const MovieEditScreen: NavStatelessComponent = () => {
   const [actorIndex, setActorIndex] = React.useState([]);
   const [selectedActor, setSelectedActor] = React.useState([]);
   const [actorDataList, setActorDataList] = React.useState<any>();
+  //similar movies
+  const [allMovie, setAllMovies] = React.useState([]);
 
-  const filterSimilars = (list) => {
-    return list.filter((listItem) =>
-      listItem.movieTitle.toLowerCase().includes(similarSearch.toLowerCase())
-    );
-  };
-  const movies = [
-    {
-      movieId: 1,
-      movieTitle: "Journey to the center of the earth ",
-      movieDesShort:
-        "On a quest to find out what happened to his missing brother, a scientist, his...",
-      movieThumb: "thumb7",
-    },
-    {
-      movieId: 2,
-      movieTitle: "Journey to the Mars",
-      movieDesShort:
-        "On a quest to find out what happened to his missing brother, a scientist, his...",
-      movieThumb: "thumb8",
-    },
-    {
-      movieId: 3,
-      movieTitle: "Journey to the center of the earth ",
-      movieDesShort:
-        "On a quest to find out what happened to his missing brother, a scientist, his...",
-      movieThumb: "thumb7",
-    },
-    {
-      movieId: 4,
-      movieTitle: "Journey to the Mars ",
-      movieDesShort:
-        "On a quest to find out what happened to his missing brother, a scientist, his...",
-      movieThumb: "thumb8",
-    },
-    {
-      movieId: 3,
-      movieTitle: "Journey to the center of the earth ",
-      movieDesShort:
-        "On a quest to find out what happened to his missing brother, a scientist, his...",
-      movieThumb: "thumb7",
-    },
-    {
-      movieId: 4,
-      movieTitle: "Journey to the Mars ",
-      movieDesShort:
-        "On a quest to find out what happened to his missing brother, a scientist, his...",
-      movieThumb: "thumb8",
-    },
-  ];
-  const genreModalList = [
+  const [genreModalList, setGenreModalList] = React.useState([
     {
       name: "Action",
       image: "genre_action",
-      number: 10,
+      number: 0,
       subGenre: [
         "Heroic Bloodshed",
         "Military Action",
@@ -173,7 +128,7 @@ const MovieEditScreen: NavStatelessComponent = () => {
     {
       name: "Comedy",
       image: "genre_comedy",
-      number: 7,
+      number: 0,
       subGenre: [
         "Action-Comedy",
         "Dark Comedy (Black Comedy)",
@@ -193,7 +148,7 @@ const MovieEditScreen: NavStatelessComponent = () => {
     {
       name: "Crime",
       image: "genre_crime",
-      number: 2,
+      number: 0,
       subGenre: [
         "Caper",
         "Heist",
@@ -222,7 +177,7 @@ const MovieEditScreen: NavStatelessComponent = () => {
     },
     {
       name: "Experimental",
-      image: "genre_drama",
+      image: "genre_experimental",
       number: 0,
       subGenre: [
         "Surrealist",
@@ -243,7 +198,7 @@ const MovieEditScreen: NavStatelessComponent = () => {
     },
     {
       name: "Historical",
-      image: "genre_fantasy",
+      image: "genre_history",
       number: 0,
       subGenre: [
         "Historical Event",
@@ -273,7 +228,7 @@ const MovieEditScreen: NavStatelessComponent = () => {
     },
     {
       name: "Romance",
-      image: "genre_romance",
+      image: "genre_rommance",
       number: 0,
       subGenre: [
         "Romance Drama",
@@ -283,7 +238,7 @@ const MovieEditScreen: NavStatelessComponent = () => {
     },
     {
       name: "Science Fiction",
-      image: "genre_romance",
+      image: "genre_fiction",
       number: 0,
       subGenre: [
         "Post-Apocalyptic",
@@ -310,7 +265,7 @@ const MovieEditScreen: NavStatelessComponent = () => {
     },
     {
       name: "Western",
-      image: "genre_thriller",
+      image: "genre_western",
       number: 0,
       subGenre: [
         "Epic Western",
@@ -322,7 +277,7 @@ const MovieEditScreen: NavStatelessComponent = () => {
         "Spaghetti Western"
       ]
     },
-  ];
+  ]);
 
   const saveProject = () => {
     setSnackBarVisible(true);
@@ -361,7 +316,7 @@ const MovieEditScreen: NavStatelessComponent = () => {
 
   useEffect(() => {
     getSignleMovie()
-    console.log("====================", route);
+    movieDetails()
   }, [])
 
   const getSignleMovie = async () => {
@@ -380,6 +335,7 @@ const MovieEditScreen: NavStatelessComponent = () => {
           setMovieBanner(resposeJson.data.movieBanner)
           setTitle(resposeJson.data.title)
           setLogLine(Object.values(resposeJson.data.logline).toString().replaceAll(',', ' '))
+          setOldLogLineData(resposeJson.data.logline)
           setTagLine(resposeJson.data.tagline)
           setSynopsis(resposeJson.data.synopsis)
           setGenre(resposeJson.data.genres)
@@ -393,14 +349,50 @@ const MovieEditScreen: NavStatelessComponent = () => {
       })
   }
 
-  const saveMovieDetails = async () => {
+  const movieDetails = async () => {
+    const token = await AsyncStorage.getItem('authToken')
+    fetch(BaseURl + 'movies/movieDetails', {
+      method: 'get',
+      headers: {
+        "Authorization": `Bearer ${token}`,
+      }
+    })
+      .then((response) => response.json())
+      .then((responseJson) => {
+        console.log("Existing Actors: ", responseJson.data)
+        let movies = []
+        let actors = []
+        if (responseJson.code === 200) {
+          responseJson.data.map(item => {
+            item.actors.map(actor => {
+              actors.push(actor)
+              if (actorData.length === 0) { setActorData(actors) }
+              else { setActorData(prevState => [...prevState, actor]) }
+            })
+            item.similarMovies.map(movie => {
+              movies.push(movie)
+            })
+          })
+          setAllMovies(movies)
+        }
+      })
+      .catch((error) => {
+        console.log(error,'===error===')
+      })
+  }
+
+  const editMovieDetails = async () => {
     const token = await AsyncStorage.getItem('authToken')
     const uriPart = movieBanner.split('.');
     const fileExtension = uriPart[uriPart.length - 1];
     let Taglist = { tags: tags }
-    console.log(Taglist)
+    let LoglineData = { logline: oldlogLineData }
+    let Genres = { genres: genre }
+    let Actors = { actors: actors }
+    let Movies = { similarMovies: similarMovie }
     let formData = new FormData()
-    formData.append('type', "Movie")
+
+    formData.append('movieId', route.params.id)
     formData.append("movieBanner", {
       uri: movieBanner,
       name: `photo.${fileExtension}`,
@@ -408,15 +400,15 @@ const MovieEditScreen: NavStatelessComponent = () => {
     });
     formData.append('title', title)
     formData.append('synopsis', synopsis)
-    formData.append('logline', JSON.stringify(logLineData))
-    formData.append('genres', JSON.stringify(genreData))
+    formData.append('logline', logLineData === undefined ? JSON.stringify(LoglineData) : JSON.stringify(logLineData))
+    formData.append('genres', JSON.stringify(Genres))
     formData.append('tagline', tagLine)
     formData.append('tags', JSON.stringify(Taglist))
-    formData.append('actors', JSON.stringify(actorDataList))
-    formData.append("similarMovies", JSON.stringify(similarMovie))
+    formData.append('actors', JSON.stringify(Actors))
+    formData.append("similarMovies", JSON.stringify(Movies))
 
     console.log("formData", formData);
-    fetch(BaseURl + 'movies/basicDetails', {
+    fetch(BaseURl + 'movies/editMovieDetails', {
       method: 'post',
       headers: {
         "Authorization": `Bearer ${token}`,
@@ -426,8 +418,12 @@ const MovieEditScreen: NavStatelessComponent = () => {
       .then((response) => response.json())
       .then((responseJson) => {
         console.log("responseJson  ", responseJson)
-        alert(responseJson.message)
-        navigation.goBack()
+        if (responseJson.code === 200) {
+          navigation.goBack()
+          alert(responseJson.message)
+        } else {
+          alert(responseJson.message)
+        }
       })
       .catch((error) => {
         console.log(error)
@@ -478,6 +474,18 @@ const MovieEditScreen: NavStatelessComponent = () => {
       })
   }
 
+  const removeActor = (item) => {
+    let data = actors.filter(actor => actor._id !== item._id)
+    setActors(data)
+    // setModalRemoveCast(true)
+  }
+
+  const removeTag = (item) => {
+    let data = tags.filter(tag => tag !== item)
+    setTags(data)
+    // setModalRemoveTag(true)
+  }
+
   const saveLogLine = () => {
     setModalLogline(false)
     let data = []
@@ -487,7 +495,6 @@ const MovieEditScreen: NavStatelessComponent = () => {
     setLogLine(incident + ' ' + protagonist + ' ' + action + ' ' + antagonist)
   }
 
-  //save genre
   const saveGenreData = (item, index) => {
     if (genreIndex.length > 0) {
       if (genreIndex.includes(index)) {
@@ -523,27 +530,44 @@ const MovieEditScreen: NavStatelessComponent = () => {
     }
   }
 
-  const saveGeneres = () => {
-    setModalGenreDetail(false)
-    let data = {}
-    data[singleGenre.name]= selectedSubGenre
-    // if (singleGenre.name === "Action") { data[singleGenre.name]= selectedSubGenre } 
-    // else if (singleGenre.name === "Comedy") { data[singleGenre.name]= selectedSubGenre } 
-    // else if (singleGenre.name === "Drama") { data.push({ Drama: selectedSubGenre }) }
-    // else if (singleGenre.name === "Fantasy") { data.push({ Fantasy: selectedSubGenre }) }
-    // else if (singleGenre.name === "Horror") { data.push({ Horror: selectedSubGenre }) }
-    // else if (singleGenre.name === "Science Fiction") { data.push({ ScienceFiction: selectedSubGenre }) }
-    // else if (singleGenre.name === "Western") { data.push({ Western: selectedSubGenre }) }
-    // else if (singleGenre.name === "Animation") { data.push({ Animation: selectedSubGenre }) }
-    // else if (singleGenre.name === "Crime") { data.push({ Crime: selectedSubGenre }) }
-    // else if (singleGenre.name === "Experimental") { data.push({ Experimental: selectedSubGenre }) }
-    // else if (singleGenre.name === "Romance") { data.push({ Romance: selectedSubGenre }) }
-    // else if (singleGenre.name === "Thriller") { data.push({ Thriller: selectedSubGenre }) }
-    console.log(Object.assign({}, data), data, '======---------');
+  const removeGenre = (item) => {
+    let data = genre.filter(oldGen => oldGen !== item)
+    setGenre(data)
+  }
 
-    setGenreData(prev => ({...prev,data})) 
+  const saveGeneres = () => {
+    genreModalList.findIndex(object => {
+      if (object.name === singleGenre.name) {
+        object.number = selectedSubGenre.length
+        console.log(object.number)
+      }
+    });
+
+    let data = {}
+    let allGenre = []
+    data[singleGenre.name] = selectedSubGenre
+    console.log(data, '======---------', selectedSubGenre.length);
+    allGenre.push(data)
+    if (genreData.length === 0) { setGenreData(allGenre) }
+    else { setGenreData(prevState => [...prevState, data]) }
+    setModalGenreDetail(false)
     setGenreIndex([])
     setSelectedSubGenre([])
+  }
+
+  const saveSimilarMovie = (name: any, poster: any) => {
+    let movie = []
+    movie.push({ moviePoster: poster, movieName: name })
+    console.log(movie, similarMovie)
+    if (similarMovie.length > 0) { setSimilarMovie(prevState => [...prevState, { moviePoster: poster, movieName: name }]) }
+    else { setSimilarMovie(movie) }
+    setModalSimilarMovies(false)
+  }
+
+  const removeMovie = (item) => {
+    let data = similarMovie.filter(movie => movie._id !== item._id)
+    setSimilarMovie(data)
+    // setModalRemoveMovie(true)
   }
 
   const pickMovieBanner = async () => {
@@ -672,7 +696,7 @@ const MovieEditScreen: NavStatelessComponent = () => {
                       {Object.keys(genre)}
                     </Text.Primary>
                     <TouchableOpacity
-                      onPress={() => setModalRemoveGenre(true)}
+                      onPress={() => removeGenre(genre)}
                       style={{ position: "absolute", top: -5, right: -4 }}
                     >
                       <View
@@ -724,7 +748,7 @@ const MovieEditScreen: NavStatelessComponent = () => {
                     </Text.Primary>
                     <Text.Primary style={styles.castName}>{dreamcast.heroName}</Text.Primary>
                     <TouchableOpacity
-                      onPress={() => setModalRemoveCast(true)}
+                      onPress={() => removeActor(dreamcast)}
                       style={{ position: "absolute", top: 4, right: 4 }}
                     >
                       <View
@@ -762,7 +786,7 @@ const MovieEditScreen: NavStatelessComponent = () => {
                       {tag}
                     </Text.Primary>
                     <TouchableOpacity
-                      onPress={() => setModalRemoveTag(true)}
+                      onPress={() => removeTag(tag)}
                       style={{ position: "absolute", top: -5, right: -4 }}
                     >
                       <View
@@ -815,7 +839,7 @@ const MovieEditScreen: NavStatelessComponent = () => {
                       {similarMovie.movieName}
                     </Text.Primary>
                     <TouchableOpacity
-                      onPress={() => setModalRemoveMovie(true)}
+                      onPress={() => removeMovie(similarMovie)}
                       style={{ position: "absolute", top: -5, right: -4 }}
                     >
                       <View
@@ -857,7 +881,7 @@ const MovieEditScreen: NavStatelessComponent = () => {
         </Snackbar>
         <View style={{ marginBottom: 16 }}>
           <Button.Primary
-            onPress={() => saveProject()}
+            onPress={() => editMovieDetails()}
             textType={"Primary"}
             style={{ alignItems: "center", height: 48, marginBottom: 20 }}
           >
@@ -963,8 +987,29 @@ const MovieEditScreen: NavStatelessComponent = () => {
           </ScrollView>
 
           <Button.Primary
-            onPress={() => console.log("---------------------",genreData)}
-            // setModalGenre(false)}
+            onPress={() => {
+              if (genreData.length > 0) {
+                if (genre.length > 0) {
+                  genre.findIndex(object => {
+                    genreData.findIndex(obj => {
+                      if (Object.keys(object).toString() == Object.keys(obj).toString()) {
+                        console.log("object", Object.keys(object).toString())
+                        let newstate = genre.filter(item => Object.keys(item).toString() !== Object.keys(obj).toString())
+                        newstate.push(obj)
+                        console.log(newstate)
+                        setGenre(newstate)
+                      } else {
+                        setGenre(prevState => [...prevState, obj])
+                      }
+                    })
+                  })
+                } else {
+                  setGenre(genreData)
+                }
+                Toast.show("Genres Added.", { duration: Toast.durations.LONG, })
+              }
+              setModalGenre(false)
+            }}
             textType={"Primary"}
             style={{ alignItems: "center" }}
           >
@@ -1099,6 +1144,9 @@ const MovieEditScreen: NavStatelessComponent = () => {
               let data = { actors: selectedActor }
               setActorDataList(data)
               console.log(Object.assign(data))
+              selectedActor.map(item => {
+                if (actors.length > 0) { setActors(prevState => [...prevState, item]) }
+              })
               setModalCast(false)
             }}
             textType={"Primary"}
@@ -1295,8 +1343,7 @@ const MovieEditScreen: NavStatelessComponent = () => {
               data.push(tag)
               setTags(prevState => [...prevState, tag])
               setModalTags(false)
-            }
-            }
+            }}
             textType={"Primary"}
             style={{ alignItems: "center", marginTop: 16 }}
           >
@@ -1337,30 +1384,34 @@ const MovieEditScreen: NavStatelessComponent = () => {
             onChangeText={(search) => setSimilarSearch(search)}
             placeholderTextColor={Colors.white1}
           />
-          {filterSimilars(movies).map((movie, index) => (
-            <View key={index} style={styles.similarMovie}>
-              <Image
-                source={imagePath[movie.movieThumb]}
-                style={{ width: 80, height: 100, borderRadius: 16, marginRight: 16 }}
-              />
-              <View style={{ flex: 1 }}>
-                <TouchableOpacity
-                  style={{ display: "flex", flexDirection: "row", marginBottom: 8 }}
-                  onPress={() => setModalSimilarDetail(true)}
-                >
-                  <Text.ParagraphTitle style={{ flex: 1 }}>{movie.movieTitle}</Text.ParagraphTitle>
-                  <MaterialIcons
-                    name={"keyboard-arrow-right"}
-                    size={24}
-                    color={Colors.white}
-                    style={{ textAlignVertical: "center" }}
+          <ScrollView style={{ width: "100%" }}>
+            {allMovie ? allMovie.map((movie, index) => (
+              <TouchableOpacity onPress={() => saveSimilarMovie(movie.movieName, movie.moviePoster)}>
+                <View key={index} style={styles.similarMovie}>
+                  <Image
+                    source={{ uri: movie.moviePoster }}
+                    style={{ width: 80, height: 100, borderRadius: 16, marginRight: 16 }}
                   />
-                </TouchableOpacity>
+                  <View style={{ flex: 1 }}>
+                    <TouchableOpacity
+                      style={{ display: "flex", flexDirection: "row", marginBottom: 8 }}
+                      onPress={() => setModalSimilarDetail(true)}
+                    >
+                      <Text.ParagraphTitle style={{ flex: 1 }}>{movie.movieName}</Text.ParagraphTitle>
+                      <MaterialIcons
+                        name={"keyboard-arrow-right"}
+                        size={24}
+                        color={Colors.white}
+                        style={{ textAlignVertical: "center" }}
+                      />
+                    </TouchableOpacity>
 
-                <Text.Tertiary>{movie.movieDesShort}</Text.Tertiary>
-              </View>
-            </View>
-          ))}
+                    {/* <Text.Tertiary>{movie.movieDesShort}</Text.Tertiary> */}
+                  </View>
+                </View>
+              </TouchableOpacity>
+            )) : null}
+          </ScrollView>
         </View>
       </Modal>
 

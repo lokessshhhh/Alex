@@ -1,8 +1,10 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { ScrollView, View, Image, TouchableOpacity, TextInput, Dimensions } from "react-native";
 import Modal from "react-native-modal";
 import { useNavigation, useRoute } from "@react-navigation/native";
-import { Snackbar } from "react-native-paper";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import axios from "axios";
+import Toast from "react-native-root-toast";
 import {
   MaterialIcons,
   MaterialCommunityIcons,
@@ -19,6 +21,7 @@ import { NavStatelessComponent } from "interfaces";
 import { Icon, Text, Input, Button } from "components";
 import { Colors, Font } from "style";
 
+import BaseURl from "constant/BaseURL";
 import imagesPath from "../../constant/imagePath";
 import navigationOptions from "./BookSceneScreen.navigationOptions";
 import styles from "./BookSceneScreen.styles";
@@ -27,48 +30,129 @@ import imagePath from "../../constant/imagePath";
 const BookSceneScreen: NavStatelessComponent = () => {
   const navigation = useNavigation();
   const navigator = navigate(navigation);
-  const route = useRoute();
+  const route = useRoute<any>();
   const deviceWidth = Dimensions.get("window").width;
-
+  console.log(route)
   const [modalRemoveHero, setModalRemoveHero] = React.useState(false);
   const [modalHero, setModalHero] = React.useState(false);
   const [modalNewActor, setModalNewActor] = React.useState(false);
   const [modalDelActor, setModalDelActor] = React.useState(false);
   const [modalConfirmSave, setModalConfirmSave] = React.useState(false);
   const [modalRemoveChapter, setModalRemoveChapter] = React.useState(false);
+  //
+  const [heroName, setHeroName] = React.useState("");
+  const [actorDescription, setActorDescription] = React.useState("");
+  const [herosList, setHerosList] = React.useState([]);
+  const [actorIndex, setActorIndex] = React.useState([]);
+  const [selectedActor, setSelectedActor] = React.useState([]);
+  //
+  const [sceneName, setSceneName] = React.useState("");
+  const [sceneDesc, setSceneDesc] = React.useState("");
+  const [actors, setActors] = React.useState([]);
 
-  const heros = [
-    {
-      name: "John Wick",
-      actorName: "Keanu Reeves",
-      desc: "Ex killer, suffering after his daughter dies.",
-      avatar: "avatar3",
-      active: true,
-    },
-    {
-      name: "Jessica Jones",
-      actorName: "Laetitia Casta",
-      desc: "Ex killer’s wife, suffering after his daughter dies.",
-      avatar: "avatar2",
-      active: false,
-    },
-    {
-      name: "Elizabet Watson",
-      actorName: "Margot Robbie",
-      desc: "Ex killer’s wife, suffering after his daughter dies.",
-      avatar: "avatar4",
-      active: false,
-    },
-  ];
+  useEffect(() => {
+    setSceneName(route.params.chapter.sceneTitle)
+    setSceneDesc(route.params.chapter.sceneDescription)
+    setActors(route.params.chapter.actors)
+  }, [])
 
-  const saveScene = () => {
-    setModalConfirmSave(false);
-    navigator.goBack();
-  };
-  const deleteChapter = () => {
-    setModalRemoveChapter(false);
-    navigator.goBack();
-  };
+  const saveNewHero = () => {
+    setModalNewActor(false)
+    let data = []
+    data.push({ heroName: heroName, actorDescription: actorDescription })
+    if (herosList.length > 0) { setHerosList(prevState => [...prevState, { heroName: heroName, actorDescription: actorDescription }]) }
+    else { setHerosList(data) }
+  }
+
+  const selectHeros = (item, index) => {
+    if (actorIndex.length > 0) {
+      if (actorIndex.includes(index)) {
+        let removeIndex = actorIndex.filter((i) => i !== index)
+        let remove = selectedActor.filter((i) => i.actorId !== item.actorId)
+        console.log(remove)
+        setActorIndex(removeIndex)
+        setActors(remove)
+      } else {
+        setActorIndex((prevState: any) => [...prevState, index])
+        if (actors.length > 0) { setActors(prevState => [...prevState, item]) }
+        else {
+          let data = []
+          data.push(item)
+          setActors(data)
+        }
+      }
+    } else {
+      setActorIndex((prevState: any) => [...prevState, index])
+      if (actors.length > 0) { setActors(prevState => [...prevState, item]) }
+      else {
+        let data = []
+        data.push(item)
+        setActors(data)
+      }
+    }
+  }
+
+  const removeHero = (i) => {
+    // setModalRemoveHero(true)
+    let data = actors.filter((item) => item.heroName !== i.heroName)
+    setActors(data)
+  }
+
+  const editScene = async () => {
+    const token = await AsyncStorage.getItem('authToken')
+    const data = {
+      bookId: route.params.id,
+      actId: route.params.actId,
+      sceneId: route.params.chapter._id,
+      sceneTitle: sceneName,
+      sceneDescription: sceneDesc,
+      actors: actors
+    }
+    console.log(data)
+    axios.post(BaseURl + 'books/editScene', data, {
+      headers: {
+        "Authorization": `Bearer ${token}`,
+      },
+    })
+      .then((resposeJson) => {
+        console.log("response data: ", resposeJson.data);
+        if (resposeJson.data.code === 200) {
+          Toast.show(resposeJson.data.message, { duration: Toast.durations.LONG, })
+          navigator.goBack()
+        }
+      })
+      .catch((err) => {
+        console.log(err);
+      })
+  }
+
+  const deleteChapter = async () => {
+    const token = await AsyncStorage.getItem('authToken')
+    const data = {
+      bookId: route.params.id,
+      actId: route.params.actId,
+      chapterId: route.params.chapter._id,
+    }
+    console.log(data)
+    axios.post(BaseURl + 'books/deleteChapter', data, {
+      headers: {
+        "Authorization": `Bearer ${token}`,
+      },
+    })
+      .then((resposeJson) => {
+        console.log("response data: ", resposeJson.data);
+        if (resposeJson.data.code === 200) {
+          Toast.show(resposeJson.data.message, { duration: Toast.durations.LONG, })
+          setModalRemoveChapter(false);
+          navigator.goBack()
+        }
+      })
+      .catch((err) => {
+        setModalRemoveChapter(false);
+        console.log(err);
+      })
+  }
+
   return (
     <View style={{ backgroundColor: Colors.GradTop, height: vh(100) }}>
       <View style={styles.container}>
@@ -93,11 +177,10 @@ const BookSceneScreen: NavStatelessComponent = () => {
             }
           </Text.Tertiary>
         </View>
-        <Input value={""} placeholder={"Scene Title"} />
+        <Input value={sceneName} onChangeText={(text) => setSceneName(text)} placeholder={"Scene Title"} />
         <TextInput
-          value={
-            "Watch Molly's Game yesterday, good movie, just a little too long for me Kevin Costner was excellent, as per usual."
-          }
+          value={sceneDesc}
+          onChangeText={(text) => setSceneDesc(text)}
           placeholder={"Enter your text here"}
           placeholderTextColor={Colors.white1}
           style={{
@@ -125,67 +208,41 @@ const BookSceneScreen: NavStatelessComponent = () => {
               {"Add Hero"}
             </Text.Primary>
           </TouchableOpacity>
-          <View style={styles.avatar}>
-            <Text.Primary
-              style={{
-                borderRadius: 16,
-                paddingVertical: 8,
-                paddingHorizontal: 12,
-                backgroundColor: Colors.btnBack,
-              }}
-            >
-              {"John Wick"}
-            </Text.Primary>
-            <TouchableOpacity
-              onPress={() => setModalRemoveHero(true)}
-              style={{ position: "absolute", top: -2, right: -2 }}
-            >
-              <View
+          {actors.length > 0 ? actors.map((item, index) => (
+            <View style={styles.avatar} key={index}>
+              <Text.Primary
                 style={{
-                  width: 20,
-                  height: 20,
-                  backgroundColor: "rgba(255, 69, 58, 1)",
-                  padding: 2,
-                  borderRadius: 10,
+                  borderRadius: 16,
+                  paddingVertical: 8,
+                  paddingHorizontal: 12,
+                  backgroundColor: Colors.btnBack,
                 }}
               >
-                <Ionicons name="ios-close" size={16} color={Colors.white} />
-              </View>
-            </TouchableOpacity>
-          </View>
-          <View style={styles.avatar}>
-            <Text.Primary
-              style={{
-                borderRadius: 16,
-                paddingVertical: 8,
-                paddingHorizontal: 12,
-                backgroundColor: Colors.btnBack,
-              }}
-            >
-              {"Jessica Jones"}
-            </Text.Primary>
-            <TouchableOpacity
-              onPress={() => setModalRemoveHero(true)}
-              style={{ position: "absolute", top: -2, right: -2 }}
-            >
-              <View
-                style={{
-                  width: 20,
-                  height: 20,
-                  backgroundColor: "rgba(255, 69, 58, 1)",
-                  padding: 2,
-                  borderRadius: 10,
-                }}
+                {item.heroName}
+              </Text.Primary>
+              <TouchableOpacity
+                onPress={() => removeHero(item)}
+                style={{ position: "absolute", top: -2, right: -2 }}
               >
-                <Ionicons name="ios-close" size={16} color={Colors.white} />
-              </View>
-            </TouchableOpacity>
-          </View>
+                <View
+                  style={{
+                    width: 20,
+                    height: 20,
+                    backgroundColor: "rgba(255, 69, 58, 1)",
+                    padding: 2,
+                    borderRadius: 10,
+                  }}
+                >
+                  <Ionicons name="ios-close" size={16} color={Colors.white} />
+                </View>
+              </TouchableOpacity>
+            </View>
+          )) : null}
         </View>
 
         <View style={{ position: "absolute", bottom: 50, marginHorizontal: 16, width: "100%" }}>
           <Button.Primary
-            onPress={() => navigator.goBack()}
+            onPress={() => editScene()}
             textType={"Primary"}
             style={{ alignItems: "center", height: 48 }}
           >
@@ -310,7 +367,7 @@ const BookSceneScreen: NavStatelessComponent = () => {
           >
             <View style={{ width: (vw(100) - 64) / 2 - 8, marginRight: 16 }}>
               <Button.Primary
-                onPress={() => saveScene()}
+                onPress={() => editScene()}
                 textType={"Primary"}
                 style={{ alignItems: "center", height: 40, paddingVertical: 12 }}
               >
@@ -438,97 +495,36 @@ const BookSceneScreen: NavStatelessComponent = () => {
             <AntDesign name="plus" size={20} color={Colors.blue} />
           </TouchableOpacity>
           <ScrollView>
-            <View style={[styles.catBtnContainer, { display: "flex", flexDirection: "row" }]}>
-              <ScrollView horizontal={true}>
-                <View style={[styles.castInfo]}>
-                  <View style={{ display: "flex", flexDirection: "column" }}>
-                    <Text.ParagraphTitle style={{ marginBottom: 8, fontWeight: "700" }}>
-                      {"John Wick"}
-                    </Text.ParagraphTitle>
-                    <Text.Tertiary style={{ color: "rgba(255, 255, 255, 0.6)" }}>
-                      {"Ex killer, suffering after his daughter dies."}
-                    </Text.Tertiary>
+            {herosList ? herosList.map((item, index) => (
+              <TouchableOpacity onPress={() => selectHeros(item, index)} style={[styles.catBtnContainer, { display: "flex", flexDirection: "row" }]} key={index}>
+                <ScrollView horizontal={true}>
+                  <View style={[styles.castInfo]}>
+                    <View style={{ display: "flex", flexDirection: "column" }}>
+                      <Text.ParagraphTitle style={{ marginBottom: 8, fontWeight: "700" }}>
+                        {item.heroName}
+                      </Text.ParagraphTitle>
+                      <Text.Tertiary style={{ color: "rgba(255, 255, 255, 0.6)" }}>
+                        {item.actorDescription}
+                      </Text.Tertiary>
+                    </View>
+                    {actorIndex.map((i) => i === index ? <Image source={imagePath["check"]} style={{ width: 24, height: 24, marginLeft: 20 }} /> : null)}
                   </View>
-                </View>
-                <View style={{ display: "flex", flexDirection: "row" }}>
-                  <TouchableOpacity onPress={() => setModalNewActor(true)}>
-                    <View style={styles.editCastBtn}>
-                      <Icon name="Edit_white" width="24" height="24" fill="none" />
-                    </View>
-                  </TouchableOpacity>
+                  <View style={{ display: "flex", flexDirection: "row" }}>
+                    <TouchableOpacity onPress={() => setModalNewActor(true)}>
+                      <View style={styles.editCastBtn}>
+                        <Icon name="Edit_white" width="24" height="24" fill="none" />
+                      </View>
+                    </TouchableOpacity>
 
-                  <TouchableOpacity onPress={() => setModalDelActor(true)}>
-                    <View style={[styles.editCastBtn, { backgroundColor: "rgba(255, 69, 58, 1)" }]}>
-                      <Feather name="trash-2" size={24} color={Colors.white} />
-                    </View>
-                  </TouchableOpacity>
-                </View>
-              </ScrollView>
-            </View>
-            <View style={[styles.catBtnContainer, { display: "flex", flexDirection: "row" }]}>
-              <ScrollView horizontal={true}>
-                <View style={[styles.castInfo, { flex: 1 }]}>
-                  <View style={{ display: "flex", flexDirection: "column", flex: 1 }}>
-                    <Text.ParagraphTitle style={{ marginBottom: 8, fontWeight: "700" }}>
-                      {"Jessica Jones"}
-                    </Text.ParagraphTitle>
-                    <Text.Tertiary style={{ color: "rgba(255, 255, 255, 0.6)" }}>
-                      {"Ex killer’s wife, suffering after his daughter dies."}
-                    </Text.Tertiary>
+                    <TouchableOpacity onPress={() => setModalDelActor(true)}>
+                      <View style={[styles.editCastBtn, { backgroundColor: "rgba(255, 69, 58, 1)" }]}>
+                        <Feather name="trash-2" size={24} color={Colors.white} />
+                      </View>
+                    </TouchableOpacity>
                   </View>
-                </View>
-                <View style={{ display: "flex", flexDirection: "row", flex: 1 }}>
-                  <TouchableOpacity onPress={() => setModalNewActor(true)}>
-                    <View style={styles.editCastBtn}>
-                      <Icon name="Edit_white" width="24" height="24" fill="none" />
-                    </View>
-                  </TouchableOpacity>
-
-                  <TouchableOpacity onPress={() => setModalDelActor(true)}>
-                    <View style={[styles.editCastBtn, { backgroundColor: "rgba(255, 69, 58, 1)" }]}>
-                      <Feather name="trash-2" size={24} color={Colors.white} />
-                    </View>
-                  </TouchableOpacity>
-                </View>
-              </ScrollView>
-            </View>
-            <View style={[styles.catBtnContainer, { display: "flex", flexDirection: "row" }]}>
-              <ScrollView horizontal={true}>
-                <View
-                  style={[
-                    styles.castInfo,
-                    {
-                      flex: 1,
-                      backgroundColor: Colors.transparent,
-                      borderColor: Colors.btnBack,
-                      borderWidth: 1,
-                    },
-                  ]}
-                >
-                  <View style={{ display: "flex", flexDirection: "column", flex: 1 }}>
-                    <Text.ParagraphTitle style={{ marginBottom: 8, fontWeight: "700" }}>
-                      {"Margot Robbie"}
-                    </Text.ParagraphTitle>
-                    <Text.Tertiary style={{ color: "rgba(255, 255, 255, 0.6)" }}>
-                      {"Ex killer’s wife, suffering after his daughter dies."}
-                    </Text.Tertiary>
-                  </View>
-                </View>
-                <View style={{ display: "flex", flexDirection: "row", flex: 1 }}>
-                  <TouchableOpacity onPress={() => setModalNewActor(true)}>
-                    <View style={styles.editCastBtn}>
-                      <Icon name="Edit_white" width="24" height="24" fill="none" />
-                    </View>
-                  </TouchableOpacity>
-
-                  <TouchableOpacity onPress={() => setModalDelActor(true)}>
-                    <View style={[styles.editCastBtn, { backgroundColor: "rgba(255, 69, 58, 1)" }]}>
-                      <Feather name="trash-2" size={24} color={Colors.white} />
-                    </View>
-                  </TouchableOpacity>
-                </View>
-              </ScrollView>
-            </View>
+                </ScrollView>
+              </TouchableOpacity>
+            )) : null}
           </ScrollView>
           <Button.Primary
             onPress={() => setModalHero(false)}
@@ -538,67 +534,69 @@ const BookSceneScreen: NavStatelessComponent = () => {
             <Text.TagTitle>{"Attach Selected"}</Text.TagTitle>
           </Button.Primary>
         </View>
-      </Modal>
-      {/* newActor Modal */}
-      <Modal
-        isVisible={modalNewActor}
-        swipeDirection="down"
-        onSwipeComplete={() => setModalNewActor(false)}
-        onRequestClose={() => setModalNewActor(false)}
-        onBackdropPress={() => setModalNewActor(false)}
-        deviceWidth={deviceWidth}
-        style={{ width: "100%", marginLeft: 0, marginBottom: 0, justifyContent: "flex-end" }}
-      >
-        <View style={[styles.modalContainer, { height: vh(100) - 50, paddingBottom: 40 }]}>
-          <View
-            style={{
-              width: 40,
-              height: 4,
-              backgroundColor: Colors.white,
-              opacity: 0.3,
-              marginTop: 8,
-              marginBottom: 18,
-            }}
-          ></View>
+        {/* newActor Modal */}
+        <Modal
+          isVisible={modalNewActor}
+          swipeDirection="down"
+          onSwipeComplete={() => setModalNewActor(false)}
+          onRequestClose={() => setModalNewActor(false)}
+          onBackdropPress={() => setModalNewActor(false)}
+          deviceWidth={deviceWidth}
+          style={{ width: "100%", marginLeft: 0, marginBottom: 0, justifyContent: "flex-end" }}
+        >
+          <View style={[styles.modalContainer, { height: vh(100) - 50, paddingBottom: 40 }]}>
+            <View
+              style={{
+                width: 40,
+                height: 4,
+                backgroundColor: Colors.white,
+                opacity: 0.3,
+                marginTop: 8,
+                marginBottom: 18,
+              }}
+            ></View>
 
-          <TouchableOpacity style={styles.modalBackBtn} onPress={() => setModalNewActor(false)}>
-            <Ionicons name="arrow-back" size={20} color={Colors.blue} />
-          </TouchableOpacity>
+            <TouchableOpacity style={styles.modalBackBtn} onPress={() => setModalNewActor(false)}>
+              <Ionicons name="arrow-back" size={20} color={Colors.blue} />
+            </TouchableOpacity>
 
-          <Text.ModalTitle style={{ marginBottom: 25 }}>{"Create a New Hero"}</Text.ModalTitle>
-          <View style={[styles.catBtnContainer, { display: "flex", flexDirection: "row" }]}>
-            <View style={{ flex: 1 }}>
-              <Input value={""} placeholder={"Hero's Name"} />
-            </View>
-          </View>
-          <View style={{ height: vh(90) - 220 }}>
+            <Text.ModalTitle style={{ marginBottom: 25 }}>{"Create a New Hero"}</Text.ModalTitle>
             <View style={[styles.catBtnContainer, { display: "flex", flexDirection: "row" }]}>
-              <TextInput
-                value=""
-                placeholder={"Ex killer, suffering after his daughter dies."}
-                placeholderTextColor={Colors.white1}
-                style={{
-                  height: 160,
-                  backgroundColor: Colors.inputBack,
-                  padding: 16,
-                  borderRadius: 8,
-                  textAlignVertical: "top",
-                  width: "100%",
-                }}
-                numberOfLines={3}
-                multiline={true}
-              />
+              <View style={{ flex: 1 }}>
+                <Input value={heroName} onChangeText={(text) => setHeroName(text)} placeholder={"Hero's Name"} />
+              </View>
             </View>
-          </View>
+            <View style={{ height: vh(90) - 220 }}>
+              <View style={[styles.catBtnContainer, { display: "flex", flexDirection: "row" }]}>
+                <TextInput
+                  value={actorDescription}
+                  onChangeText={(text) => setActorDescription(text)}
+                  placeholder={"Ex killer, suffering after his daughter dies."}
+                  placeholderTextColor={Colors.white1}
+                  style={{
+                    color: '#fff',
+                    height: 160,
+                    backgroundColor: Colors.inputBack,
+                    padding: 16,
+                    borderRadius: 8,
+                    textAlignVertical: "top",
+                    width: "100%",
+                  }}
+                  numberOfLines={3}
+                  multiline={true}
+                />
+              </View>
+            </View>
 
-          <Button.Primary
-            onPress={() => setModalNewActor(false)}
-            textType={"Primary"}
-            style={{ alignItems: "center" }}
-          >
-            <Text.TagTitle>{"Create"}</Text.TagTitle>
-          </Button.Primary>
-        </View>
+            <Button.Primary
+              onPress={() => saveNewHero()}
+              textType={"Primary"}
+              style={{ alignItems: "center" }}
+            >
+              <Text.TagTitle>{"Create"}</Text.TagTitle>
+            </Button.Primary>
+          </View>
+        </Modal>
       </Modal>
 
       {/* delActor Modal */}

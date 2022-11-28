@@ -23,17 +23,15 @@ import imagesPath from "../../constant/imagePath";
 import navigationOptions from "./MoviePlayScreen.navigationOptions";
 import styles from "./MoviePlayScreen.styles";
 import imagePath from "../../constant/imagePath";
+import { mapObjIndexed } from "ramda";
 
 const MoviePlayScreen: NavStatelessComponent = () => {
   const navigation = useNavigation();
   const navigator = navigate(navigation);
-  const route = useRoute();
+  const route = useRoute<any>();
   const deviceWidth = Dimensions.get("window").width;
+  const acts = ["Act 1", "Act 2", "Act 3", "Act 4"]
 
-  useEffect(() => {
-    console.log("==============", route);
-
-  }, [])
 
   return (
     <View style={{ backgroundColor: Colors.GradTop }}>
@@ -74,7 +72,7 @@ const MoviePlayScreen: NavStatelessComponent = () => {
         </View>
         <View style={styles.chapterInfo}>
           <Text.ModalTitle style={{ fontWeight: "600", marginBottom: 16 }}>
-            {"John Wick Chapter 8"}
+            {route.params.title}
           </Text.ModalTitle>
           <View style={{ display: "flex", flexDirection: "row" }}>
             <View
@@ -91,72 +89,33 @@ const MoviePlayScreen: NavStatelessComponent = () => {
             </View>
           </View>
         </View>
-        <TouchableOpacity
-          style={styles.navigationBtn}
-          onPress={() => navigator.openMovieActScreen(
-            { id: route.params.id }
-          )}
-        >
-          <View style={styles.buttonContainer}>
-            <Text.Primary>{"Act 1"}</Text.Primary>
-            <View style={styles.btnLeft}>
-              <MaterialIcons
-                name="arrow-forward-ios"
-                style={{ textAlignVertical: "center" }}
-                color={Colors.white}
-                size={14}
-              />
+        {/* {acts.map((item, index)=> ( */}
+        {route.params.screenPlay.map((item, index) => (
+          <TouchableOpacity
+            key={index}
+            style={styles.navigationBtn}
+            onPress={() => navigator.openMovieActScreen(
+              {
+                id: route.params.id,
+                actId: item._id,
+                sceneId: item.scenes[0]._id,
+                actName: item.actName
+              }
+            )}
+          >
+            <View style={styles.buttonContainer}>
+              <Text.Primary>{item.actName}</Text.Primary>
+              <View style={styles.btnLeft}>
+                <MaterialIcons
+                  name="arrow-forward-ios"
+                  style={{ textAlignVertical: "center" }}
+                  color={Colors.white}
+                  size={14}
+                />
+              </View>
             </View>
-          </View>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={styles.navigationBtn}
-          onPress={() => navigator.openMovieActScreen()}
-        >
-          <View style={styles.buttonContainer}>
-            <Text.Primary>{"Act 2"}</Text.Primary>
-            <View style={styles.btnLeft}>
-              <MaterialIcons
-                name="arrow-forward-ios"
-                style={{ textAlignVertical: "center" }}
-                color={Colors.white}
-                size={14}
-              />
-            </View>
-          </View>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={styles.navigationBtn}
-          onPress={() => navigator.openMovieActScreen()}
-        >
-          <View style={styles.buttonContainer}>
-            <Text.Primary>{"Act 3"}</Text.Primary>
-            <View style={styles.btnLeft}>
-              <MaterialIcons
-                name="arrow-forward-ios"
-                style={{ textAlignVertical: "center" }}
-                color={Colors.white}
-                size={14}
-              />
-            </View>
-          </View>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={styles.navigationBtn}
-          onPress={() => navigator.openMovieActScreen()}
-        >
-          <View style={styles.buttonContainer}>
-            <Text.Primary>{"Act 4"}</Text.Primary>
-            <View style={styles.btnLeft}>
-              <MaterialIcons
-                name="arrow-forward-ios"
-                style={{ textAlignVertical: "center" }}
-                color={Colors.white}
-                size={14}
-              />
-            </View>
-          </View>
-        </TouchableOpacity>
+          </TouchableOpacity>
+        ))}
       </View>
     </View>
   );

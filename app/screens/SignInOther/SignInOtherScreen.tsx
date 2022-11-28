@@ -18,7 +18,11 @@ import { Ionicons } from "@expo/vector-icons";
 import Amplify, { Auth, Hub } from "aws-amplify";
 import * as WebBrowser from "expo-web-browser";
 import { useDispatch, useSelector } from "react-redux";
-import * as Google from 'expo-google-app-auth'
+// import * as Google from 'expo-google-app-auth';
+import * as Google from 'expo-auth-session/providers/google';
+import * as AppleAuthentication from 'expo-apple-authentication';
+import axios from "axios";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 import { navigate } from "navigation";
 import { NavStatelessComponent } from "interfaces";
@@ -26,10 +30,14 @@ import { Icon, Text, Input, Button } from "components";
 import { Colors, Font } from "style";
 import { t } from "utils";
 
+import BaseURl from "constant/BaseURL";
 import { signIn } from "../../redux/actions";
 import imagePath from "../../constant/imagePath";
 import navigationOptions from "./SignInOtherScreen.navigationOptions";
 import styles from "./SignInOtherScreen.styles";
+
+WebBrowser.maybeCompleteAuthSession();
+
 // import awsconfig from "../../../src/aws-exports";
 
 // async function urlOpener(url, redirectUrl) {
@@ -48,8 +56,8 @@ import styles from "./SignInOtherScreen.styles";
 //   //   urlOpener,
 //   // },
 // });
-const SignInOtherScreen: NavStatelessComponent = () => {
 
+const SignInOtherScreen: NavStatelessComponent = () => {
 
   const navigation = useNavigation();
   const navigator = navigate(navigation);
@@ -60,35 +68,117 @@ const SignInOtherScreen: NavStatelessComponent = () => {
   const { userInfo } = useSelector((state) => state.saveUserReducer);
   console.log("userInfo_signinother:", userInfo);
 
-  const [acessToken, setAccessToken] = React.useState();
+  const [acessToken, setAccessToken] = React.useState('');
   const [userInf, setUserInfo] = React.useState();
 
-  async function signInWithGoogleAsync() {
+  const [request, response, promptAsync] = Google.useAuthRequest({
+    expoClientId: '119261466899-hi6kjavtkc3as4mru275nedq7inmfnjc.apps.googleusercontent.com',
+    iosClientId: '119261466899-8lsk8hfbr7okmech438avgp8huiagqv8.apps.googleusercontent.com',
+    webClientId: '119261466899-hi6kjavtkc3as4mru275nedq7inmfnjc.apps.googleusercontent.com',
+    scopes: ["profile", "email"]
+  });
 
-    try {
-      const result = await Google.logInAsync({
-        androidClientId: "174085287297-7qob7sgmld35tojp5u61o72j2iucq4ul.apps.googleusercontent.com",
-        iosClientId: "174085287297-qsrrshidrad0g213gpi3f2savgf142uf.apps.googleusercontent.com",
-        scopes: ["profile", "email"]
-      });
-
-      if (result.type === "success") {
-        setAccessToken(result.acessToken)
-        setAccessToken(result.user)
-        console.log("Token ", result.acessToken)
-        console.log("user", result.user);
-        Alert.alert("Email", result.user.email)
-
-      }
-      else {
-        console.log(" Denied");
-      }
-
-    } catch (error) {
-      console.log("errorrr", error)
+  React.useEffect(() => {
+    if (response?.type === 'success') {
+      const { authentication } = response;
+      console.log("========", authentication)
+      setAccessToken(authentication.accessToken)
+      fetchUserInfo(authentication.accessToken)
     }
+
+  }, [response]);
+
+  async function fetchUserInfo(token) {
+
+    await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
+      method: 'GET',
+      headers: {
+        Accept: 'application/json',
+        Authorization: `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      },
+    })
+      .then((response) => response.json())
+      .then((resposeJson) => {
+        console.log(resposeJson)
+        login(resposeJson.email, resposeJson.name, resposeJson.picture)
+      })
+      .catch((err) => {
+        console.log(err)
+      })
+
   }
 
+  function login(email: any, name: any, image: any) {
+    const data = {
+      email: email,
+      userName: name,
+      profileImage: image
+    }
+    axios
+      .post(BaseURl + "auth/logiWithGoogle", data)
+      .then((resposeJson) => {
+        console.log("response data: ", resposeJson.status);
+        if (resposeJson.status === 200) {
+          console.log(resposeJson.data.data)
+          const storeToken = async () => {
+            await AsyncStorage.setItem('authToken', resposeJson.data.data.loginToken);
+          }
+          storeToken()
+          alert(resposeJson.data.message)
+          navigator.openMainPage()
+        }
+      })
+      .catch((err) => {
+        console.log(err);
+      })
+  }
+
+  function loginWithApple() {
+    // email: any, name: any, image: any
+    const data = {
+      // email: email,
+      // userName: name,
+      // profileImage: image
+      email: "mistrydhruvi.dds@gmail.com",
+      userName: "Test " + "DDS",
+      profileImage: ""
+    }
+    axios
+      .post(BaseURl + "auth/loginWithApple", data)
+      .then((resposeJson) => {
+        console.log("response data: ", resposeJson.status);
+        if (resposeJson.status === 200) {
+          console.log(resposeJson.data.data)
+          const storeToken = async () => {
+            await AsyncStorage.setItem('authToken', resposeJson.data.data.loginToken);
+          }
+          storeToken()
+          alert(resposeJson.data.message)
+          navigator.openMainPage()
+        }
+      })
+      .catch((err) => {
+        console.log(err);
+      })
+  }
+  async function signInWithAppleAsync() {
+    // await AppleAuthentication.signOutAsync(acessToken)
+
+    await AppleAuthentication.signInAsync({
+      requestedScopes: [
+        AppleAuthentication.AppleAuthenticationScope.FULL_NAME,
+        AppleAuthentication.AppleAuthenticationScope.EMAIL
+      ],
+
+    })
+      .then(resp => {
+        console.log(resp)
+        loginWithApple()
+        // loginWithApple(resp.email, resp.fullName.familyName + " " + resp.fullName.givenName, "")
+      })
+      .catch(err => console.log(err))
+  }
 
   function showUserInfo() {
     if (userInf) {
@@ -132,20 +222,33 @@ const SignInOtherScreen: NavStatelessComponent = () => {
     }
   });
 
-  // const googleSignIn = () => {
-  //   setLoading(true);
+  async function signInWithGoogleAsync() {
 
-  //   // setTimeout(() => {
-  //   //   setLoading(false);
-  //   // }, 3000);
-  //   // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-  //   // @ts-ignore
-  //   // Auth.federatedSignIn({ provider: "Google" });
+    // try {
+    //   const result = await Google.logInAsync({
+    //     androidClientId: "174085287297-7qob7sgmld35tojp5u61o72j2iucq4ul.apps.googleusercontent.com",
+    //     iosClientId: "174085287297-qsrrshidrad0g213gpi3f2savgf142uf.apps.googleusercontent.com",
+    //     scopes: ["profile", "email"]
+    //   });
 
-  //   Auth.federatedSignIn();
-  // };
+    //   if (result.type === "success") {
+    //     setAccessToken(result.acessToken)
+    //     setAccessToken(result.user)
+    //     console.log("Token ", result.acessToken)
+    //     console.log("user", result.user);
+    //     login(result.user.email, result.user.name, result.user.photoUrl)
+    //   }
+    //   else {
+    //     console.log(" Denied");
+    //   }
+
+    // } catch (error) {
+    //   console.log("errorrr", error)
+    // }
+  }
 
   return (
+
     <ImageBackground source={imagePath["background"]} style={styles.imageBackground}>
       <View style={styles.container}>
         <View style={styles.logoContainer}>
@@ -158,11 +261,10 @@ const SignInOtherScreen: NavStatelessComponent = () => {
           </Text.TagTitle>
 
           {showUserInfo()}
-
           <Button.White
             // title={acessToken ? "Get user Data" : "Login"}
-            onPress={acessToken ? getUserData : signInWithGoogleAsync}
-
+            // onPress={acessToken ? getUserData : promptAsync}
+            onPress={() => promptAsync()}
             fullWidth={true}
             textType={"White"}
             // onPress={() => {
@@ -193,7 +295,7 @@ const SignInOtherScreen: NavStatelessComponent = () => {
           <Button.Black
             fullWidth={true}
             textType={"Black"}
-            onPress={() => navigator.openMainPage()}
+            onPress={() => signInWithAppleAsync()}
             style={styles.signInBtns}
           >
             <View
@@ -223,8 +325,6 @@ const SignInOtherScreen: NavStatelessComponent = () => {
           animationStyle={{ width: 100, height: 100, top: -20 }}
           speed={1}
         />
-
-
       </View>
     </ImageBackground>
   );

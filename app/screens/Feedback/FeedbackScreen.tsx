@@ -13,6 +13,8 @@ import {
 } from "react-native";
 import Modal from "react-native-modal";
 import { useNavigation } from "@react-navigation/native";
+import { vw, vh } from "react-native-css-vh-vw";
+
 import { LinearGradient } from "expo-linear-gradient";
 import { AntDesign, Ionicons, MaterialCommunityIcons, MaterialIcons } from "@expo/vector-icons";
 import ToggleSwitch from "toggle-switch-react-native";
@@ -28,11 +30,19 @@ import { t } from "utils";
 import imagePath from "../../constant/imagePath";
 import navigationOptions from "./FeedbackScreen.navigationOptions";
 import styles from "./FeedbackScreen.styles";
+import axios from "axios";
+import BaseURl from "constant/BaseURL";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 const FeedbackScreen: NavStatelessComponent = () => {
   const navigation = useNavigation();
   const navigator = navigate(navigation);
+
   const [userName, setUserName] = useState<string>("");
+  const [Ticket, setTicket] = useState<string>(t("FEEDBACK_TYPE_FEEDBACK_B"));
+  const [qsn, setqsn] = useState<string>("");
+  const [desqsn, setdesqsn] = useState<string>("");
+
   const [isOnNotification, setIsOnNotification] = useState(true);
   const [modalVisible, setModalVisible] = React.useState(false);
   const deviceWidth = Dimensions.get("window").width;
@@ -42,6 +52,33 @@ const FeedbackScreen: NavStatelessComponent = () => {
   };
   const closeModal = () => {
     setModalVisible(false);
+  };
+
+  const SaveFeedBack = async () => {
+    const token = await AsyncStorage.getItem("authToken");
+    const data = {
+      feedbackType: Ticket,
+      question: qsn,
+      questionDescription: desqsn,
+    };
+    console.log(data, "==data===");
+    qsn === "" && desqsn === ""
+      ? alert("please enter your question")
+      : desqsn.length < 20
+      ? alert("Question description length must be minimum 20")
+      : axios
+          .post(BaseURl + "feedback/sendDetails", data, {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          })
+          .then((response) => {
+            alert(response.data.message);
+            console.log(response, "===res===");
+          })
+          .catch((err) => {
+            console.log(err, "===err====");
+          });
   };
 
   return (
@@ -55,17 +92,32 @@ const FeedbackScreen: NavStatelessComponent = () => {
           <TouchableOpacity style={styles.navigationBtn} onPress={() => openModal()}>
             <View style={styles.buttonContainer}>
               <Text.Primary>{t("FEEDBACK_TYPE_L")}</Text.Primary>
-              <Text.Secondary style={styles.btnLeft}>{t("FEEDBACK_TICKET_TYPE_L")}</Text.Secondary>
+              <Text.Secondary style={styles.btnLeft}>
+                {Ticket === t("FEEDBACK_TYPE_FEEDBACK_B")
+                  ? t("FEEDBACK_TYPE_FEEDBACK_B")
+                  : Ticket === t("FEEDBACK_TYPE_FEATURE_REQUEST_B")
+                  ? t("FEEDBACK_TYPE_FEATURE_REQUEST_B")
+                  : Ticket === t("FEEDBACK_TYPE_ISSUE_B")
+                  ? t("FEEDBACK_TYPE_ISSUE_B")
+                  : t("FEEDBACK_TICKET_TYPE_L")}
+              </Text.Secondary>
             </View>
           </TouchableOpacity>
         </View>
         <View style={styles.feedbackContainer}>
-          <Input value="" placeholder={t("FEEDBACK_WRITE_QUESTION_I")} />
+          <Input
+            onChangeText={(value) => setqsn(value)}
+            value={qsn}
+            placeholder={t("FEEDBACK_WRITE_QUESTION_I")}
+          />
+
           <TextInput
-            value=""
+            value={desqsn}
+            onChangeText={(value) => setdesqsn(value)}
             placeholder={t("FEEDBACK_DESCRIBE_QUESTION_I")}
             placeholderTextColor={Colors.white1}
             style={{
+              color: "white",
               height: 160,
               backgroundColor: Colors.inputBack,
               padding: 16,
@@ -76,19 +128,22 @@ const FeedbackScreen: NavStatelessComponent = () => {
             multiline={true}
           />
         </View>
-      </ScrollView>
-      <View style={{ paddingHorizontal: 16 }}>
+
         <Button.Primary
+          onPress={() => {
+            console.log("===okok===");
+            SaveFeedBack();
+          }}
           fullWidth={true}
           textType={"Primary"}
-          onPress={() => navigator.openForgotPwdNew()}
-          style={{ position: "absolute", bottom: 50 }}
+          style={{ position: "absolute", bottom: vh(-42) }}
         >
           <Text.TagTitle style={{ textTransform: "none", lineHeight: 24 }}>
             {t("FEEDBACK_SEND_MESSAGE_B")}
           </Text.TagTitle>
         </Button.Primary>
-      </View>
+      </ScrollView>
+
       <Modal
         isVisible={modalVisible}
         swipeDirection="down"
@@ -112,17 +167,35 @@ const FeedbackScreen: NavStatelessComponent = () => {
           <Text.ModalTitle style={{ marginBottom: 25 }}>
             {t("FEEDBACK_TICKET_TYPE_L")}
           </Text.ModalTitle>
-          <TouchableOpacity style={styles.navigationBtn} onPress={() => closeModal()}>
+          <TouchableOpacity
+            style={styles.navigationBtn}
+            onPress={() => {
+              closeModal();
+              setTicket(t("FEEDBACK_TYPE_FEEDBACK_B"));
+            }}
+          >
             <View style={styles.buttonContainer}>
               <Text.Primary>{t("FEEDBACK_TYPE_FEEDBACK_B")}</Text.Primary>
             </View>
           </TouchableOpacity>
-          <TouchableOpacity style={styles.navigationBtn} onPress={() => closeModal()}>
+          <TouchableOpacity
+            style={styles.navigationBtn}
+            onPress={() => {
+              closeModal();
+              setTicket(t("FEEDBACK_TYPE_FEATURE_REQUEST_B"));
+            }}
+          >
             <View style={styles.buttonContainer}>
               <Text.Primary>{t("FEEDBACK_TYPE_FEATURE_REQUEST_B")}</Text.Primary>
             </View>
           </TouchableOpacity>
-          <TouchableOpacity style={styles.navigationBtn} onPress={() => closeModal()}>
+          <TouchableOpacity
+            style={styles.navigationBtn}
+            onPress={() => {
+              closeModal();
+              setTicket(t("FEEDBACK_TYPE_ISSUE_B"));
+            }}
+          >
             <View style={styles.buttonContainer}>
               <Text.Primary>{t("FEEDBACK_TYPE_ISSUE_B")}</Text.Primary>
             </View>

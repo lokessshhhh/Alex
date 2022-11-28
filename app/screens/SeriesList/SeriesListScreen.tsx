@@ -120,30 +120,49 @@ const SeriesListScreen: NavStatelessComponent = () => {
   });
 
   useEffect(() => {
-    seriesDetails()
-  }, [])
+    seriesDetails();
+    navigation.addListener("focus", () => {
+      seriesDetails();
+    });
+  }, []);
 
   //get series
   const seriesDetails = async () => {
-    const token = await AsyncStorage.getItem('authToken')
+    const token = await AsyncStorage.getItem("authToken");
 
-    fetch(BaseURl + 'series/seriesDetails', {
-      method: 'get',
+    fetch(BaseURl + "series/seriesDetails", {
+      method: "get",
       headers: {
-        "Authorization": `Bearer ${token}`,
-      }
+        Authorization: `Bearer ${token}`,
+      },
     })
       .then((response) => response.json())
       .then((responseJson) => {
-        console.log(responseJson)
+        console.log(responseJson);
         if (responseJson.code === 200) {
-          setSeriesData(responseJson.data)
+          setSeriesData(responseJson.data);
+          console.log(responseJson.data, "====");
         }
       })
       .catch((error) => {
-        console.log(error)
-      })
-  }
+        console.log(error);
+      });
+  };
+
+  const searchText = (e) => {
+    let text = e.toLowerCase();
+    let trucks = seriesData;
+    let filteredName = trucks.filter((item) => {
+      return !item.title || item.title === "" ? null : item.title.toLowerCase().match(text);
+    });
+    if (!text || text === "") {
+      seriesDetails();
+    } else if (!Array.isArray(filteredName) && !filteredName.length) {
+      console.log("no data");
+    } else if (Array.isArray(filteredName)) {
+      setSeriesData(filteredName);
+    }
+  };
 
   return (
     <ImageBackground source={imagePath["background"]} style={styles.imageBackground}>
@@ -186,7 +205,7 @@ const SeriesListScreen: NavStatelessComponent = () => {
           <TextInput
             style={styles.searchBar}
             placeholder={"Search..."}
-            onChangeText={(search) => setSearch(search)}
+            onChangeText={(e) => searchText(e)}
             placeholderTextColor={Colors.white1}
           />
           <View style={styles.movieListContainer}>
@@ -195,18 +214,18 @@ const SeriesListScreen: NavStatelessComponent = () => {
               <TouchableOpacity
                 style={styles.movieItem}
                 key={index}
-                onPress={() => navigator.openSeriesDetail(
-                  { id: item._id }
-                )}
+                onPress={() => navigator.openSeriesDetail({ id: item._id })}
               >
                 <Image source={{ uri: item.seriesBanner }} style={styles.thumbImage} />
                 <Text.ModalTitle style={{ lineHeight: 24, fontWeight: "700" }}>
                   {item.title}
                 </Text.ModalTitle>
                 <Text.Tertiary
-                  style={{ lineHeight: 24, fontWeight: "400", opacity: 0.8, textAlign: "center" }}
+                  numberOfLines={1}
+                  ellipsizeMode="tail"
+                  style={{ lineHeight: 24, fontWeight: "400", opacity: 0.8, textAlign: "left" }}
                 >
-                  {item.genres.map(genre => Object.keys(genre)+', ')}
+                  {item.genres.map((genre) => Object.keys(genre)).toString()}
                   {/* {Object.keys(item.genres).toString().substring(0, 22)} */}
                 </Text.Tertiary>
                 <LinearGradient
@@ -215,7 +234,7 @@ const SeriesListScreen: NavStatelessComponent = () => {
                   start={{ x: 0.0, y: 0.0 }}
                   end={{ x: 1.0, y: 0.0 }}
                 >
-                  <Text.Primary>{'20'}</Text.Primary>
+                  <Text.Primary>{"20"}</Text.Primary>
                   <Text.Primary
                     style={{
                       fontSize: 10,

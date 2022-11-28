@@ -16,7 +16,6 @@ import ToggleSwitch from "toggle-switch-react-native";
 import { color } from "@storybook/addon-knobs";
 import SwitchToggle from "react-native-switch-toggle";
 import { useDispatch, useSelector } from "react-redux";
-
 import { navigate } from "navigation";
 import { NavStatelessComponent } from "interfaces";
 import { Icon, Text, Input, Button } from "components";
@@ -28,12 +27,14 @@ import navigationOptions from "./LanguageSettingScreen.navigationOptions";
 import styles from "./LanguageSettingScreen.styles";
 import { setLanguage } from "../../redux/actions";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import BaseURl from "constant/BaseURL";
 
 const LanguageSettingScreen: NavStatelessComponent = () => {
   const navigation = useNavigation();
   const navigator = navigate(navigation);
   const [userName, setUserName] = useState<string>("");
   const [isOnNotification, setIsOnNotification] = useState(true);
+
 
   const dispatch = useDispatch();
   const SetLanguageDispatch = (language) => dispatch(setLanguage(language));
@@ -52,15 +53,15 @@ const LanguageSettingScreen: NavStatelessComponent = () => {
     console.log("54y5", token)
 
 
-    axios.post("http://localhost:8000/api/auth/language", language, {
+    axios.post(BaseURl + "auth/language", language, {
       headers: {
         "Authorization": `Bearer ${token}`
       }
     },
     )
       .then((response) => {
-        console.log("response :", response)
-        alert("sucess")
+        console.log("response :", response.data)
+        alert(response.data.message)
 
       })
       .catch((error) => {

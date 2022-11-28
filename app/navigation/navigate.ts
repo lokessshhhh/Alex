@@ -11,7 +11,7 @@ const openSignUp = (navigation) => (props = {}) => {
   navigation.push("SignUp", props);
 };
 const openSignIn = (navigation) => (props = {}) => {
-  navigation.push("SignInScreen", props);
+  navigation.replace("SignInScreen", props);
 };
 const openForgotPwd = (navigation) => (props = {}) => {
   navigation.push("ForgotPwd", props);
@@ -23,7 +23,7 @@ const openSignInOther = (navigation) => (props = {}) => {
   navigation.push("SignInOther", props);
 };
 const openMainPage = (navigation) => (props = {}) => {
-  navigation.push("AppStack", props);
+  navigation.replace("AppStack", props);
 };
 const openProfileEdit = (navigation) => (props = {}) => {
   navigation.push("ProfileEdit", props);
@@ -111,7 +111,7 @@ const signOut = (navigation) => (props = {}) => {
 
 
 const trackingScreen = (navigation) => (props = {}) => {
-  navigation.replace("TrackingScreen", props);
+  navigation.navigate("TrackingScreen", props);
 };
 
 const trackingWorkedInfo = (navigation) => (props = {}) => {

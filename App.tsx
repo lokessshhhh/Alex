@@ -125,3 +125,93 @@ const AppWrapper = () => {
 };
 
 export default AppWrapper;
+
+
+// //import liraries
+// import React, { useEffect, useState } from 'react';
+// import { View, Text, StyleSheet } from 'react-native';
+// import * as Linking from 'expo-linking';
+// import { NavigationContainer } from '@react-navigation/native';
+// import { createStackNavigator } from '@react-navigation/stack';
+
+// const Stack = createStackNavigator()
+// const prefix = Linking.makeUrl("/")
+
+// const Home = () => { 
+//   return (
+//     <View style={{flex:1}}>
+//       <Text>Home Screen</Text>
+//     </View>
+//   )
+// }
+// const Settings = () => { 
+//   return (
+//     <View style={{flex:1}}>
+//       <Text>Settings Screen</Text>
+//     </View>
+//   )
+// }
+
+// // create a component
+// const MyComponent = () => {
+
+//   const [data, setData] = useState(null)
+
+//   const linking = {
+//     prefixes: [prefix],
+//     config: {
+//       screens: {
+//         Home: 'home',
+//         Settings: 'settings'
+//       }
+//     }
+//   }
+
+//   function handleDeppLink(event) {
+//     let data = Linking.parse(event.url)
+//     setData(data)
+//   }
+
+//   useEffect(() => {
+
+//     async function getinitialURL() {
+//       const initialURL = await Linking.getInitialURL();
+//       if (initialURL) setData(Linking.parse(initialURL))
+//     }
+
+//     Linking.addEventListener('url', handleDeppLink);
+//     if(!data){
+//       getinitialURL()
+//     }
+    
+//     return () => {
+//       Linking.removeEventListener('url')
+//     }
+//   }, [])
+
+//   return (
+//     // <View style={styles.container}>
+//     //   <Text>{data ? JSON.stringify(data) : "APP not open from deep link"}</Text>
+//     // </View>
+//     <NavigationContainer linking={linking}>
+//       <Stack.Navigator>
+//         <Stack.Screen name='Home' component={Home}/>
+//         <Stack.Screen name='Settings' component={Settings}/>
+//       </Stack.Navigator>
+//     </NavigationContainer>
+//   );
+// };
+
+// // define your styles
+// const styles = StyleSheet.create({
+//   container: {
+//     flex: 1,
+//     justifyContent: 'center',
+//     alignItems: 'center',
+//     backgroundColor: '#fff',
+//   },
+// });
+
+// //make this component available to the app
+// export default MyComponent;
+

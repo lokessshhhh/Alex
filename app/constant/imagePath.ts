@@ -41,4 +41,7 @@ export default {
   genre_family: require("assets/images/genre/family.png"),
   genre_horror: require("assets/images/genre/horror.png"),
   check: require("assets/images/Common/check.png"),
+  genre_experimental: require("assets/images/genre/experimental.png"),
+  genre_fiction: require("assets/images/genre/fiction.png"),
+  genre_western: require("assets/images/genre/western.png"),
 };

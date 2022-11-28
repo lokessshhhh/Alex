@@ -5,9 +5,10 @@ import { Colors, Font, Layout } from "style";
 
 const styles = StyleSheet.create({
   imageBackground: {
-    minHeight: vh(101),
+    minHeight: vh(110),
   },
   container: {
+    flexGrow:1,
     paddingHorizontal: 16,
     marginTop: 60,
   },

@@ -19,8 +19,9 @@ import imagePath from "../../constant/imagePath";
 const SeriesDetailScreen: NavStatelessComponent = () => {
   const navigation = useNavigation();
   const navigator = navigate(navigation);
-  const route = useRoute();
+  const route = useRoute<any>();
   const [series, setSeries] = useState<any>([]);
+  const [screenPlay, setScreenPlay] = useState([]);
   const genres = [
     { genre: "Comedy" },
     { genre: "Sci-Fi" },
@@ -54,11 +55,13 @@ const SeriesDetailScreen: NavStatelessComponent = () => {
 
   useEffect(() => {
     getSignleSeries()
+    navigation.addListener('focus', () => {
+      getSignleSeries()
+    })
   }, [])
 
   const getSignleSeries = async () => {
     const token = await AsyncStorage.getItem('authToken')
-
     fetch(BaseURl + 'series/singleSeries/' + route.params.id, {
       method: 'get',
       headers: {
@@ -70,6 +73,7 @@ const SeriesDetailScreen: NavStatelessComponent = () => {
         console.log("response data: ", resposeJson.data);
         if (resposeJson.code === 200) {
           setSeries(resposeJson.data)
+          setScreenPlay(resposeJson.data.screenPlay)
         }
       })
       .catch((err) => {
@@ -115,7 +119,12 @@ const SeriesDetailScreen: NavStatelessComponent = () => {
             <Text.Tertiary>{"5 seasons, 30 episodes"}</Text.Tertiary>
           </View>
 
-          <TouchableOpacity onPress={() => navigator.openSeriesPlay()}>
+          <TouchableOpacity onPress={() => navigator.openSeriesPlay(
+            {
+              id: series._id,
+              title: series.title
+            }
+          )}>
             <LinearGradient
               style={styles.screenPlay}
               colors={[Colors.GradLeft, Colors.GradRight]}
